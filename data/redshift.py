@@ -102,20 +102,14 @@ def search_contractors(search_term: str, limit: int = 20) -> pd.DataFrame:
 def get_quick_transactions() -> set:
     """Distinct cod_contractor values with Quick transactions."""
     sql = """
-        SELECT DISTINCT
-            CASE
-                WHEN pi.cod_contractor IS NOT NULL THEN pi.cod_contractor
-                ELSE c.cod_contractor
-            END AS cod_contractor
+        SELECT DISTINCT c.cod_contractor
         FROM process_data.wallet_transaction wt
         LEFT JOIN raw_data.raw_ops_top_up_history msgj
             ON msgj.wallet_transaction_id = wt.id_transaction
-        LEFT JOIN process_data.contractor c
+        JOIN process_data.contractor c
             ON c.id_contractor = wt.id_contractor
         LEFT JOIN raw_data.raw_ops_top_up_upload msg
             ON msg.id = msgj.ops_top_up_upload_id
-        LEFT JOIN internal.lkp_contractor_pii pi
-            ON pi.hash_cod_contractor = wt.cod_contractor
         WHERE
             (
                 msg.message ILIKE 'Quick%%' OR
@@ -138,18 +132,14 @@ def get_quick_transactions() -> set:
 def get_future_fund_transactions() -> set:
     """Distinct cod_contractor values with Future Fund transactions."""
     sql = """
-        SELECT DISTINCT
-            CASE
-                WHEN pi.cod_contractor IS NOT NULL THEN pi.cod_contractor
-                ELSE wt.cod_contractor
-            END AS cod_contractor
+        SELECT DISTINCT c.cod_contractor
         FROM process_data.wallet_transaction wt
         LEFT JOIN raw_data.raw_ops_top_up_history msgj
             ON msgj.wallet_transaction_id = wt.id_transaction
         LEFT JOIN raw_data.raw_ops_top_up_upload msg
             ON msg.id = msgj.ops_top_up_upload_id
-        LEFT JOIN internal.lkp_contractor_pii pi
-            ON pi.hash_cod_contractor = wt.cod_contractor
+        JOIN process_data.contractor c
+            ON c.id_contractor = wt.id_contractor
         WHERE BTRIM(msg.message) ILIKE 'future%%'
     """
     df = _query_to_df(sql)
@@ -160,16 +150,10 @@ def get_future_fund_transactions() -> set:
 def get_tapi_transactions() -> set:
     """Distinct cod_contractor values with Tapi transactions."""
     sql = """
-        SELECT DISTINCT
-            CASE
-                WHEN pi.cod_contractor IS NOT NULL THEN pi.cod_contractor
-                ELSE c.cod_contractor
-            END AS cod_contractor
+        SELECT DISTINCT c.cod_contractor
         FROM process_data.wallet_transaction wt
-        LEFT JOIN process_data.contractor c
+        JOIN process_data.contractor c
             ON c.id_contractor = wt.id_contractor
-        LEFT JOIN internal.lkp_contractor_pii pi
-            ON pi.hash_cod_contractor = wt.cod_contractor
         WHERE wt.des_transaction_type = 'UTILITIES_PAYMENT'
     """
     df = _query_to_df(sql)
@@ -180,18 +164,14 @@ def get_tapi_transactions() -> set:
 def get_esim_transactions() -> set:
     """Distinct cod_contractor values with E-Sim transactions."""
     sql = """
-        SELECT DISTINCT
-            CASE
-                WHEN pi.cod_contractor IS NOT NULL THEN pi.cod_contractor
-                ELSE wt.cod_contractor
-            END AS cod_contractor
+        SELECT DISTINCT c.cod_contractor
         FROM process_data.wallet_transaction wt
         LEFT JOIN raw_data.raw_ops_top_up_history msgj
             ON msgj.wallet_transaction_id = wt.id_transaction
         LEFT JOIN raw_data.raw_ops_top_up_upload msg
             ON msg.id = msgj.ops_top_up_upload_id
-        LEFT JOIN internal.lkp_contractor_pii pi
-            ON pi.hash_cod_contractor = wt.cod_contractor
+        JOIN process_data.contractor c
+            ON c.id_contractor = wt.id_contractor
         WHERE msg.message IS NOT NULL
           AND msg.message IN (
                 'E-sim', 'E-sim Debit', 'Esim Refund',
@@ -210,15 +190,9 @@ def get_esim_transactions() -> set:
 def get_tapi_segment() -> set:
     """Distinct cod_contractor values eligible for Tapi."""
     sql = """
-        SELECT DISTINCT
-            CASE
-                WHEN pi.cod_contractor IS NOT NULL THEN pi.cod_contractor
-                ELSE c.cod_contractor
-            END AS cod_contractor
+        SELECT DISTINCT c.cod_contractor
         FROM process_data.contractor c
-        LEFT JOIN internal.lkp_contractor_pii pi
-            ON pi.hash_cod_contractor = c.cod_contractor
-        LEFT JOIN process_data.contract c2
+        JOIN process_data.contract c2
             ON c2.id_contractor = c.id_contractor
         WHERE c.cod_residence_country IN ('COL','MEX','ARG','PER','CHL')
           AND c2.des_state IN ('ACTIVE')
@@ -231,16 +205,10 @@ def get_tapi_segment() -> set:
 def get_reserve_audience() -> set:
     """Distinct cod_contractor values eligible for Reserve (pre-filtered)."""
     sql = """
-        SELECT DISTINCT
-            CASE
-                WHEN pi.cod_contractor IS NOT NULL THEN pi.cod_contractor
-                ELSE c.cod_contractor
-            END AS cod_contractor
+        SELECT DISTINCT c.cod_contractor
         FROM process_data.plan_subscription ps
-        LEFT JOIN process_data.contractor c
+        JOIN process_data.contractor c
             ON c.id_contractor = ps.id_contractor
-        LEFT JOIN internal.lkp_contractor_pii pi
-            ON pi.hash_cod_contractor = c.cod_contractor
         WHERE ps.is_enabled = true
           AND cod_plan = 'RESERVE'
     """
