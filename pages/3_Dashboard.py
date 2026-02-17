@@ -3,6 +3,8 @@
 import pandas as pd
 import streamlit as st
 
+st.set_page_config(page_title="Dashboard", page_icon=":bar_chart:", layout="wide")
+
 from data.supabase_client import get_leads
 from eligibility.products import PRODUCT_NAMES
 from shared import render_sidebar

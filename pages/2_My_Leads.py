@@ -3,6 +3,8 @@
 import pandas as pd
 import streamlit as st
 
+st.set_page_config(page_title="My Leads", page_icon=":clipboard:", layout="wide")
+
 from data.supabase_client import get_leads, update_lead_status
 from eligibility.products import PRODUCT_KEYS, PRODUCT_NAMES
 from shared import render_sidebar
@@ -11,11 +13,8 @@ render_sidebar()
 
 st.header("My Leads")
 
-if not st.session_state.get("agent_name"):
-    st.warning("Please enter your name in the sidebar first.")
-    st.stop()
-
 agent_name = st.session_state["agent_name"]
+agent_email = st.session_state["agent_email"]
 
 # ---------------------------------------------------------------------------
 # Filters
@@ -50,6 +49,7 @@ with col3:
 
 leads = get_leads(
     agent_name=agent_name,
+    agent_email=agent_email,
     product=product_filter if product_filter != "All" else None,
     status=status_filter if status_filter != "All" else None,
     days=days_filter,

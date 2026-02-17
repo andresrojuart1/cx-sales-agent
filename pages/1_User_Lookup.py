@@ -2,6 +2,8 @@
 
 import streamlit as st
 
+st.set_page_config(page_title="User Lookup", page_icon=":mag:", layout="wide")
+
 from data.redshift import get_contractor_profile, search_contractors
 from data.supabase_client import check_duplicate_lead, save_lead
 from eligibility.engine import count_eligible, get_user_eligibility
@@ -11,11 +13,6 @@ from shared import render_sidebar
 render_sidebar()
 
 st.header("User Lookup")
-
-# Require agent name
-if not st.session_state.get("agent_name"):
-    st.warning("Please enter your name in the sidebar first.")
-    st.stop()
 
 # ---------------------------------------------------------------------------
 # Search
@@ -149,6 +146,7 @@ for col, (key, product) in zip(cols, PRODUCTS.items()):
                                 product=key,
                                 agent_name=st.session_state["agent_name"],
                                 notes=notes,
+                                agent_email=st.session_state["agent_email"],
                             )
                             st.session_state[lead_key] = True
                             st.rerun()

@@ -1,4 +1,5 @@
 streamlit
+authlib>=1.3.2
 supabase
 psycopg2-binary
 pandas

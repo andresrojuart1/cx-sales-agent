@@ -16,10 +16,6 @@ render_sidebar()
 # --- Main page ---
 st.header("Welcome to the CX Sales Agent Tool")
 
-if not st.session_state.get("agent_name"):
-    st.info("Enter your name in the sidebar to get started.")
-    st.stop()
-
 st.markdown(f"Logged in as: **{st.session_state['agent_name']}**")
 
 st.markdown("""

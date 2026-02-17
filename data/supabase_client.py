@@ -55,13 +55,20 @@ def get_risk_matrix_rejected() -> set:
 _CX_LEADS_TABLE = "cx_leads"
 
 
-def save_lead(cr_code: str, product: str, agent_name: str, notes: str = "") -> dict:
+def save_lead(
+    cr_code: str,
+    product: str,
+    agent_name: str,
+    notes: str = "",
+    agent_email: str = "",
+) -> dict:
     """Insert a new qualified lead. Returns the inserted row."""
     client = get_client()
     row = {
         "cr_code": cr_code,
         "product": product,
         "agent_name": agent_name,
+        "agent_email": agent_email,
         "notes": notes,
         "status": "Qualified",
     }
@@ -87,6 +94,7 @@ def check_duplicate_lead(cr_code: str, product: str, window_days: int = 30) -> b
 
 def get_leads(
     agent_name: str | None = None,
+    agent_email: str | None = None,
     product: str | None = None,
     status: str | None = None,
     days: int | None = None,
@@ -95,7 +103,10 @@ def get_leads(
     client = get_client()
     query = client.table(_CX_LEADS_TABLE).select("*").order("created_at", desc=True)
 
-    if agent_name:
+    if agent_email:
+        # Match by email (new leads) OR by name (legacy leads without email)
+        query = query.or_(f"agent_email.eq.{agent_email},agent_name.eq.{agent_name}")
+    elif agent_name:
         query = query.eq("agent_name", agent_name)
     if product:
         query = query.eq("product", product)
