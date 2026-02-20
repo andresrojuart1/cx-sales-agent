@@ -13,14 +13,6 @@ def require_auth():
     - If email domain is not allowed, deny access.
     - If authorized, populate session state with agent identity.
     """
-    # DEBUG — remove after login is working
-    with st.expander("DEBUG: st.user"):
-        st.json({
-            "is_logged_in": st.user.is_logged_in,
-            "email": getattr(st.user, "email", "N/A"),
-            "name": getattr(st.user, "name", "N/A"),
-        })
-
     if not st.user.is_logged_in:
         st.header("CX Sales Agent")
         st.info("Please sign in with your Google Workspace account to continue.")
