@@ -1,23 +1,19 @@
 """Redshift connection and cached query functions."""
 
-import os
-
 import pandas as pd
 import psycopg2
 import streamlit as st
-from dotenv import load_dotenv
-
-load_dotenv()
 
 
 def get_connection():
-    """Create a new Redshift connection from env vars."""
+    """Create a new Redshift connection from st.secrets."""
+    cfg = st.secrets["redshift"]
     return psycopg2.connect(
-        host=os.environ["REDSHIFT_HOST"],
-        port=os.environ["REDSHIFT_PORT"],
-        dbname=os.environ["REDSHIFT_DBNAME"],
-        user=os.environ["REDSHIFT_USER"],
-        password=os.environ["REDSHIFT_PASSWORD"],
+        host=cfg["host"],
+        port=cfg["port"],
+        dbname=cfg["dbname"],
+        user=cfg["user"],
+        password=cfg["password"],
     )
 
 

@@ -1,6 +1,5 @@
-streamlit
+streamlit>=1.39.0
 authlib>=1.3.2
-supabase
-psycopg2-binary
-pandas
-python-dotenv
+supabase>=2.0.0
+psycopg2-binary>=2.9.9
+pandas>=2.0.0

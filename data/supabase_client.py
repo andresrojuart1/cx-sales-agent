@@ -1,18 +1,15 @@
 """Supabase connection for audiences, risk matrix, and lead storage."""
 
-import os
 from datetime import datetime, timedelta, timezone
 
 import streamlit as st
-from dotenv import load_dotenv
 from supabase import create_client
-
-load_dotenv()
 
 
 def get_client():
-    """Create a Supabase client from env vars."""
-    return create_client(os.environ["SUPABASE_URL"], os.environ["SUPABASE_KEY"])
+    """Create a Supabase client from st.secrets."""
+    cfg = st.secrets["supabase"]
+    return create_client(cfg["url"], cfg["key"])
 
 
 # ---------------------------------------------------------------------------
