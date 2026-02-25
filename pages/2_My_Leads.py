@@ -32,7 +32,7 @@ with col1:
 with col2:
     status_filter = st.selectbox(
         "Status",
-        options=["All", "Qualified", "Contacted", "Converted", "Rejected"],
+        options=["All", "Qualified", "Contacted", "Converted", "Rejected", "Expired"],
     )
 
 with col3:
@@ -72,8 +72,8 @@ df["created"] = pd.to_datetime(df["created_at"]).dt.strftime("%Y-%m-%d %H:%M")
 st.metric("Total Leads", len(df))
 
 status_counts = df["status"].value_counts()
-scols = st.columns(4)
-for i, status in enumerate(["Qualified", "Contacted", "Converted", "Rejected"]):
+scols = st.columns(5)
+for i, status in enumerate(["Qualified", "Contacted", "Converted", "Rejected", "Expired"]):
     with scols[i]:
         st.metric(status, status_counts.get(status, 0))
 
@@ -113,7 +113,7 @@ if lead_options:
     selected_label = st.selectbox("Select a lead", options=list(lead_options.keys()))
     new_status = st.selectbox(
         "New status",
-        options=["Qualified", "Contacted", "Converted", "Rejected"],
+        options=["Qualified", "Contacted", "Converted", "Rejected", "Expired"],
     )
     if st.button("Update Status", type="primary"):
         lead_id = lead_options[selected_label]

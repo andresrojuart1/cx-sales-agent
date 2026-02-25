@@ -73,20 +73,46 @@ def save_lead(
     return result.data[0] if result.data else {}
 
 
-def check_duplicate_lead(cr_code: str, product: str, window_days: int = 30) -> bool:
-    """Return True if a lead already exists for this user+product within the window."""
+_LOCK_WINDOW_DAYS = 60
+
+
+def check_opportunity_lock(cr_code: str, product: str) -> dict | None:
+    """Check if an active lead locks this cr_code+product (60-day window).
+
+    Returns the blocking lead dict if locked, or None if the opportunity is
+    available.  Active means status in ('Qualified', 'Contacted').
+    """
     client = get_client()
-    cutoff = (datetime.now(timezone.utc) - timedelta(days=window_days)).isoformat()
+    cutoff = (datetime.now(timezone.utc) - timedelta(days=_LOCK_WINDOW_DAYS)).isoformat()
     result = (
         client.table(_CX_LEADS_TABLE)
-        .select("id")
+        .select("id, agent_name, agent_email, status, created_at")
         .eq("cr_code", cr_code)
         .eq("product", product)
+        .in_("status", ["Qualified", "Contacted"])
         .gte("created_at", cutoff)
+        .order("created_at", desc=True)
         .limit(1)
         .execute()
     )
-    return len(result.data) > 0
+    return result.data[0] if result.data else None
+
+
+def expire_stale_leads() -> int:
+    """Set status='Expired' on active leads older than the lock window.
+
+    Returns the number of leads expired.
+    """
+    client = get_client()
+    cutoff = (datetime.now(timezone.utc) - timedelta(days=_LOCK_WINDOW_DAYS)).isoformat()
+    result = (
+        client.table(_CX_LEADS_TABLE)
+        .update({"status": "Expired"})
+        .in_("status", ["Qualified", "Contacted"])
+        .lt("created_at", cutoff)
+        .execute()
+    )
+    return len(result.data)
 
 
 def get_leads(

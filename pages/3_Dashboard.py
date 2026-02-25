@@ -5,13 +5,30 @@ import streamlit as st
 
 st.set_page_config(page_title="Dashboard", page_icon=":bar_chart:", layout="wide")
 
-from data.supabase_client import get_leads
+from data.conversion import run_conversion_check
+from data.supabase_client import expire_stale_leads, get_leads
 from eligibility.products import PRODUCT_NAMES
 from shared import render_sidebar
 
 render_sidebar()
 
 st.header("Dashboard")
+
+# ---------------------------------------------------------------------------
+# Conversion & expiration check
+# ---------------------------------------------------------------------------
+
+if st.button("Check Conversions", type="secondary"):
+    with st.spinner("Matching leads against transactions..."):
+        converted = run_conversion_check()
+        expired = expire_stale_leads()
+    if converted:
+        st.success(f"Auto-converted {len(converted)} lead(s)!")
+    if expired:
+        st.info(f"Expired {expired} stale lead(s) (>60 days, not converted)")
+    if not converted and not expired:
+        st.info("No new conversions or expirations detected.")
+    st.rerun()
 
 # ---------------------------------------------------------------------------
 # Time period selector
@@ -42,13 +59,16 @@ df["date"] = df["created_at"].dt.date
 
 total = len(df)
 converted = len(df[df["status"] == "Converted"])
+expired = len(df[df["status"] == "Expired"])
+active = len(df[df["status"].isin(["Qualified", "Contacted"])])
 conversion_rate = (converted / total * 100) if total > 0 else 0
 
-col1, col2, col3, col4 = st.columns(4)
+col1, col2, col3, col4, col5 = st.columns(5)
 col1.metric("Total Leads", total)
-col2.metric("Converted", converted)
-col3.metric("Conversion Rate", f"{conversion_rate:.1f}%")
-col4.metric("Active Agents", df["agent_name"].nunique())
+col2.metric("Active", active)
+col3.metric("Converted", converted)
+col4.metric("Conversion Rate", f"{conversion_rate:.1f}%")
+col5.metric("Expired", expired)
 
 st.divider()
 

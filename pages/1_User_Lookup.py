@@ -4,8 +4,10 @@ import streamlit as st
 
 st.set_page_config(page_title="User Lookup", page_icon=":mag:", layout="wide")
 
+from datetime import datetime, timezone
+
 from data.redshift import get_contractor_profile, search_contractors
-from data.supabase_client import check_duplicate_lead, save_lead
+from data.supabase_client import check_opportunity_lock, save_lead
 from eligibility.engine import count_eligible, get_user_eligibility
 from eligibility.products import PRODUCTS
 from shared import render_sidebar
@@ -125,22 +127,29 @@ for col, (key, product) in zip(cols, PRODUCTS.items()):
             st.caption(product.description)
             st.markdown(f"*{product.pitch}*")
 
-            # Mark as Lead
             lead_key = f"lead_{selected_cr}_{key}"
             if st.session_state.get(lead_key):
                 st.info("Lead submitted!")
             else:
-                with st.expander("Mark as Lead"):
-                    notes = st.text_area(
-                        "Notes (optional)",
-                        key=f"notes_{selected_cr}_{key}",
-                        placeholder="Any context about the interaction...",
-                    )
-                    if st.button("Submit Lead", key=f"btn_{selected_cr}_{key}", type="primary"):
-                        is_dup = check_duplicate_lead(selected_cr, key)
-                        if is_dup:
-                            st.warning("A lead for this user + product already exists in the last 30 days.")
-                        else:
+                lock = check_opportunity_lock(selected_cr, key)
+                if lock:
+                    if lock["agent_email"] == st.session_state["agent_email"]:
+                        st.info("You already have an active lead for this product.")
+                    else:
+                        created = datetime.fromisoformat(lock["created_at"])
+                        days_left = 60 - (datetime.now(timezone.utc) - created).days
+                        st.warning(
+                            f"Locked by **{lock['agent_name']}** — "
+                            f"available in ~{max(days_left, 1)} days"
+                        )
+                else:
+                    with st.expander("Mark as Lead"):
+                        notes = st.text_area(
+                            "Notes (optional)",
+                            key=f"notes_{selected_cr}_{key}",
+                            placeholder="Any context about the interaction...",
+                        )
+                        if st.button("Submit Lead", key=f"btn_{selected_cr}_{key}", type="primary"):
                             save_lead(
                                 cr_code=selected_cr,
                                 product=key,
