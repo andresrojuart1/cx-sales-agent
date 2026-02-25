@@ -162,3 +162,42 @@ status_df = df["status"].value_counts().reset_index()
 status_df.columns = ["Status", "Count"]
 
 st.bar_chart(status_df.set_index("Status")["Count"])
+
+st.divider()
+
+# ---------------------------------------------------------------------------
+# Agent leads explorer
+# ---------------------------------------------------------------------------
+
+st.subheader("Agent Leads")
+
+agent_names = sorted(df["agent_name"].unique().tolist())
+selected_agent = st.selectbox(
+    "Select Agent",
+    options=["All Agents"] + agent_names,
+)
+
+agent_df = df if selected_agent == "All Agents" else df[df["agent_name"] == selected_agent]
+
+a_total = len(agent_df)
+a_converted = len(agent_df[agent_df["status"] == "Converted"])
+a_active = len(agent_df[agent_df["status"].isin(["Qualified", "Contacted"])])
+a_rate = (a_converted / a_total * 100) if a_total > 0 else 0
+
+mc1, mc2, mc3, mc4 = st.columns(4)
+mc1.metric("Total", a_total)
+mc2.metric("Active", a_active)
+mc3.metric("Converted", a_converted)
+mc4.metric("Conversion Rate", f"{a_rate:.1f}%")
+
+agent_display = agent_df[["cr_code", "product_name", "agent_name", "status", "notes", "date"]].rename(
+    columns={
+        "cr_code": "CR Code",
+        "product_name": "Product",
+        "agent_name": "Agent",
+        "status": "Status",
+        "notes": "Notes",
+        "date": "Date",
+    }
+)
+st.dataframe(agent_display, use_container_width=True, hide_index=True)
