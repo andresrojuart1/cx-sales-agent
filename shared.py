@@ -97,6 +97,18 @@ def apply_global_theme():
                 filter: brightness(1.06);
             }
 
+            .stButton > button[kind="secondary"] {
+                background: rgba(255, 255, 255, 0.04);
+                border: 1px solid rgba(124, 115, 247, 0.28);
+                box-shadow: none;
+            }
+
+            .stButton > button[kind="tertiary"] {
+                background: transparent;
+                border: 1px solid rgba(255, 255, 255, 0.10);
+                box-shadow: none;
+            }
+
             .stDataFrame, div[data-testid="stMetric"], div[data-testid="stExpander"] {
                 background: rgba(6, 6, 9, 0.82);
                 border: 1px solid var(--border-color);
@@ -567,23 +579,38 @@ def apply_global_theme():
             }
 
             .ontop-sidebar-brand {
-                padding: 0.15rem 0 0.95rem;
+                padding: 0.1rem 0 0.75rem;
             }
 
             .ontop-sidebar-brand h1 {
-                margin: 0;
-                font-size: 2rem;
+                margin: 0.15rem 0 0;
+                font-size: 1.55rem;
                 line-height: 1;
             }
 
             .ontop-sidebar-brand p {
-                margin: 0.45rem 0 0;
+                margin: 0.35rem 0 0;
                 color: var(--text-muted);
-                font-size: 0.88rem;
+                font-size: 0.82rem;
+            }
+
+            .ontop-sidebar-badge {
+                display: inline-flex;
+                align-items: center;
+                gap: 0.35rem;
+                padding: 0.28rem 0.55rem;
+                border-radius: 999px;
+                background: rgba(255, 255, 255, 0.06);
+                border: 1px solid rgba(255, 255, 255, 0.08);
+                color: #FFFFFF;
+                font-size: 0.72rem;
+                font-weight: 700;
+                letter-spacing: 0.08em;
+                text-transform: uppercase;
             }
 
             .ontop-sidebar-section-label {
-                margin: 1rem 0 0.45rem;
+                margin: 0.9rem 0 0.4rem;
                 color: var(--text-muted);
                 text-transform: uppercase;
                 letter-spacing: 0.08em;
@@ -592,42 +619,74 @@ def apply_global_theme():
             }
 
             .ontop-sidebar-user {
-                padding: 1rem;
+                padding: 0.95rem;
                 border-radius: 18px;
                 border: 1px solid var(--border-color);
                 background:
                     radial-gradient(circle at top right, rgba(227, 82, 118, 0.14), transparent 36%),
                     linear-gradient(180deg, rgba(26, 26, 36, 0.96), rgba(6, 6, 9, 0.96));
                 margin-top: 1rem;
-                margin-bottom: 0.75rem;
+                margin-bottom: 0.65rem;
+                display: grid;
+                grid-template-columns: 2.5rem 1fr;
+                gap: 0.75rem;
+                align-items: center;
+            }
+
+            .ontop-sidebar-avatar {
+                width: 2.5rem;
+                height: 2.5rem;
+                border-radius: 999px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                background: linear-gradient(135deg, rgba(38, 28, 148, 0.95), rgba(227, 82, 118, 0.8));
+                color: #FFFFFF;
+                font-size: 0.92rem;
+                font-weight: 800;
             }
 
             .ontop-sidebar-user strong {
                 display: block;
                 color: #FFFFFF;
-                font-size: 1.05rem;
-                margin-bottom: 0.35rem;
+                font-size: 1rem;
+                margin-bottom: 0.2rem;
             }
 
             .ontop-sidebar-user span {
                 color: var(--text-secondary);
-                font-size: 0.9rem;
+                font-size: 0.85rem;
                 word-break: break-word;
+            }
+
+            .ontop-sidebar-user-label {
+                display: block;
+                color: var(--text-muted);
+                font-size: 0.72rem;
+                text-transform: uppercase;
+                letter-spacing: 0.08em;
+                margin-bottom: 0.22rem;
             }
 
             [data-testid="stSidebar"] a[data-testid="stPageLink-NavLink"] {
                 width: 100%;
                 display: flex;
                 align-items: center;
-                min-height: 2.9rem;
-                padding: 0.7rem 0.9rem;
-                margin-bottom: 0.35rem;
+                min-height: 2.55rem;
+                padding: 0.62rem 0.82rem;
+                margin-bottom: 0.28rem;
                 border-radius: 16px;
                 border: 1px solid transparent;
                 background: rgba(255, 255, 255, 0.02);
                 color: #FFFFFF;
                 text-decoration: none;
                 transition: border-color 120ms ease, background 120ms ease;
+            }
+
+            [data-testid="stSidebar"] a[data-testid="stPageLink-NavLink"] p {
+                color: #FFFFFF;
+                font-size: 0.98rem;
+                font-weight: 600;
             }
 
             [data-testid="stSidebar"] a[data-testid="stPageLink-NavLink"]:hover {
@@ -720,11 +779,15 @@ def render_sidebar():
     """Render the common sidebar with auth guard, identity display, and cache controls."""
     require_auth()
     apply_global_theme()
+    agent_name = st.session_state["agent_name"]
+    agent_email = st.session_state["agent_email"]
+    initials = "".join(part[0] for part in agent_name.split()[:2]).upper() or "CX"
 
     with st.sidebar:
         st.markdown(
             """
             <div class="ontop-sidebar-brand">
+                <span class="ontop-sidebar-badge">Workspace</span>
                 <h1>CX Sales Agent</h1>
                 <p>Lead qualification workspace</p>
             </div>
@@ -733,13 +796,13 @@ def render_sidebar():
         )
 
         st.markdown('<div class="ontop-sidebar-section-label">Workspace</div>', unsafe_allow_html=True)
-        st.page_link("pages/1_User_Lookup.py", label="User Lookup")
-        st.page_link("pages/2_My_Leads.py", label="My Leads")
-        st.page_link("pages/3_Dashboard.py", label="Dashboard")
+        st.page_link("pages/1_User_Lookup.py", label="User Lookup", icon=":material/search:")
+        st.page_link("pages/2_My_Leads.py", label="My Leads", icon=":material/inbox:")
+        st.page_link("pages/3_Dashboard.py", label="Dashboard", icon=":material/monitoring:")
 
         st.markdown('<div class="ontop-sidebar-section-label">Utilities</div>', unsafe_allow_html=True)
 
-        if st.button("Refresh Data", use_container_width=True):
+        if st.button("Refresh Data", use_container_width=True, type="secondary"):
             st.cache_data.clear()
             st.success("Cache cleared — data will reload on next query.")
 
@@ -748,12 +811,16 @@ def render_sidebar():
         st.markdown(
             f"""
             <div class="ontop-sidebar-user">
-                <strong>{st.session_state['agent_name']}</strong>
-                <span>{st.session_state['agent_email']}</span>
+                <div class="ontop-sidebar-avatar">{initials}</div>
+                <div>
+                    <span class="ontop-sidebar-user-label">Signed in</span>
+                    <strong>{agent_name}</strong>
+                    <span>{agent_email}</span>
+                </div>
             </div>
             """,
             unsafe_allow_html=True,
         )
 
-        if st.button("Sign out", use_container_width=True):
+        if st.button("Sign out", use_container_width=True, type="tertiary"):
             st.logout()
