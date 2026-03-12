@@ -1,6 +1,6 @@
 """My Leads — View and manage leads submitted by the current agent."""
 
-from datetime import datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 
 import pandas as pd
 import streamlit as st
@@ -68,7 +68,8 @@ def format_date_cell(raw_value: str) -> str:
 def reset_filters():
     st.session_state["my_leads_product_filter"] = "All"
     st.session_state["my_leads_status_filter"] = "All"
-    st.session_state["my_leads_days_filter"] = 30
+    st.session_state["my_leads_start_date"] = date.today() - timedelta(days=30)
+    st.session_state["my_leads_end_date"] = date.today()
     st.session_state["my_leads_search_filter"] = ""
 
 st.markdown(
@@ -107,25 +108,35 @@ with col2:
     )
 
 with col3:
-    days_filter = st.selectbox(
-        "Time Period",
-        options=[7, 30, 90, 365],
-        format_func=lambda d: f"Last {d} days",
-        index=1,
-        key="my_leads_days_filter",
+    start_date = st.date_input(
+        "Start Date",
+        value=st.session_state.get("my_leads_start_date", date.today() - timedelta(days=30)),
+        key="my_leads_start_date",
     )
 
 with col4:
+    end_date = st.date_input(
+        "End Date",
+        value=st.session_state.get("my_leads_end_date", date.today()),
+        key="my_leads_end_date",
+    )
+
+with col5:
     search_filter = st.text_input(
         "Find lead",
         placeholder="CR code, note, or product",
         key="my_leads_search_filter",
     )
 
-with col5:
+filter_action_col, filter_button_col = st.columns([4.4, 0.8], vertical_alignment="bottom")
+with filter_button_col:
     if st.button("Clear", use_container_width=True):
         reset_filters()
         st.rerun()
+
+if start_date > end_date:
+    st.warning("Start Date cannot be later than End Date.")
+    st.stop()
 
 # ---------------------------------------------------------------------------
 # Fetch leads
@@ -136,7 +147,6 @@ leads = get_leads(
     agent_email=agent_email,
     product=product_filter if product_filter != "All" else None,
     status=status_filter if status_filter != "All" else None,
-    days=days_filter,
 )
 
 if not leads:
@@ -145,6 +155,15 @@ if not leads:
 
 df = pd.DataFrame(leads)
 base_df = df.copy()
+df["created_at"] = pd.to_datetime(df["created_at"], utc=True)
+base_df["created_at"] = pd.to_datetime(base_df["created_at"], utc=True)
+
+start_ts = pd.Timestamp(start_date)
+end_ts = pd.Timestamp(end_date) + pd.Timedelta(days=1) - pd.Timedelta(microseconds=1)
+date_mask = (df["created_at"] >= start_ts.tz_localize("UTC")) & (df["created_at"] <= end_ts.tz_localize("UTC"))
+base_date_mask = (base_df["created_at"] >= start_ts.tz_localize("UTC")) & (base_df["created_at"] <= end_ts.tz_localize("UTC"))
+df = df[date_mask].copy()
+base_df = base_df[base_date_mask].copy()
 
 # Display-friendly columns
 df["product_name"] = df["product"].map(PRODUCT_NAMES)

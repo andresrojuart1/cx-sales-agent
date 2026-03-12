@@ -1,5 +1,7 @@
 """Dashboard — Performance overview and team stats."""
 
+from datetime import date, timedelta
+
 import altair as alt
 import pandas as pd
 import streamlit as st
@@ -79,20 +81,25 @@ all_df["date"] = all_df["created_at"].dt.date
 
 agent_filter_options = ["All Agents"] + sorted(all_df["agent_name"].dropna().unique().tolist())
 
-toolbar_col1, toolbar_col2, toolbar_col3 = st.columns([1.1, 1.3, 1.2], vertical_alignment="bottom")
+toolbar_col1, toolbar_col2, toolbar_col3, toolbar_col4 = st.columns([1.05, 1.05, 1.2, 1.0], vertical_alignment="bottom")
 with toolbar_col1:
-    days = st.selectbox(
-        "Time Period",
-        options=[7, 30, 90, 365],
-        format_func=lambda d: f"Last {d} days",
-        index=1,
+    start_date = st.date_input(
+        "Start Date",
+        value=st.session_state.get("dashboard_start_date", date.today() - timedelta(days=30)),
+        key="dashboard_start_date",
     )
 with toolbar_col2:
+    end_date = st.date_input(
+        "End Date",
+        value=st.session_state.get("dashboard_end_date", date.today()),
+        key="dashboard_end_date",
+    )
+with toolbar_col3:
     selected_agent = st.selectbox(
         "Agent",
         options=agent_filter_options,
     )
-with toolbar_col3:
+with toolbar_col4:
     if st.button("Check Conversions", type="secondary", use_container_width=True):
         with st.spinner("Matching leads against transactions..."):
             converted = run_conversion_check()
@@ -105,13 +112,18 @@ with toolbar_col3:
             st.info("No new conversions or expirations detected.")
         st.rerun()
 
-cutoff = pd.Timestamp.now(tz="UTC") - pd.Timedelta(days=days)
-df = all_df[all_df["created_at"] >= cutoff].copy()
+if start_date > end_date:
+    st.warning("Start Date cannot be later than End Date.")
+    st.stop()
+
+start_ts = pd.Timestamp(start_date).tz_localize("UTC")
+end_ts = (pd.Timestamp(end_date) + pd.Timedelta(days=1) - pd.Timedelta(microseconds=1)).tz_localize("UTC")
+df = all_df[(all_df["created_at"] >= start_ts) & (all_df["created_at"] <= end_ts)].copy()
 if selected_agent != "All Agents":
     df = df[df["agent_name"] == selected_agent].copy()
 
 if df.empty:
-    st.info("No leads match the selected agent and time period.")
+    st.info("No leads match the selected agent and date range.")
     st.stop()
 
 # ---------------------------------------------------------------------------
