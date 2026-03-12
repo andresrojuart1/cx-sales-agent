@@ -737,6 +737,14 @@ def render_sidebar():
         st.page_link("pages/2_My_Leads.py", label="My Leads")
         st.page_link("pages/3_Dashboard.py", label="Dashboard")
 
+        st.markdown('<div class="ontop-sidebar-section-label">Utilities</div>', unsafe_allow_html=True)
+
+        if st.button("Refresh Data", use_container_width=True):
+            st.cache_data.clear()
+            st.success("Cache cleared — data will reload on next query.")
+
+        st.caption("Data is cached for 1 hour. Use refresh to reload the latest data.")
+
         st.markdown(
             f"""
             <div class="ontop-sidebar-user">
@@ -749,11 +757,3 @@ def render_sidebar():
 
         if st.button("Sign out", use_container_width=True):
             st.logout()
-
-        st.markdown('<div class="ontop-sidebar-section-label">Utilities</div>', unsafe_allow_html=True)
-
-        if st.button("Refresh Data", use_container_width=True):
-            st.cache_data.clear()
-            st.success("Cache cleared — data will reload on next query.")
-
-        st.caption("Data is cached for 1 hour. Use refresh to reload the latest data.")
