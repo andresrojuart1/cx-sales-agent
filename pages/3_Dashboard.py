@@ -10,7 +10,7 @@ st.set_page_config(page_title="Dashboard", page_icon=":bar_chart:", layout="wide
 
 from data.conversion import run_conversion_check
 from data.supabase_client import delete_lead, expire_stale_leads, get_leads
-from eligibility.products import PRODUCT_NAMES
+from eligibility.products import PRODUCT_ESTIMATED_MRR, PRODUCT_NAMES
 from shared import can_delete_leads, render_sidebar
 
 render_sidebar()
@@ -76,6 +76,7 @@ if not all_leads:
 
 all_df = pd.DataFrame(all_leads)
 all_df["product_name"] = all_df["product"].map(PRODUCT_NAMES)
+all_df["estimated_mrr"] = all_df["product"].map(PRODUCT_ESTIMATED_MRR).fillna(0.0)
 all_df["created_at"] = pd.to_datetime(all_df["created_at"])
 all_df["date"] = all_df["created_at"].dt.date
 
@@ -135,10 +136,11 @@ converted = len(df[df["status"] == "Converted"])
 expired = len(df[df["status"] == "Expired"])
 active = len(df[df["status"].isin(["Qualified", "Contacted"])])
 conversion_rate = (converted / total * 100) if total > 0 else 0
+estimated_mrr = float(df["estimated_mrr"].sum())
 
 st.markdown(
     f"""
-    <div class="ontop-mini-stats" style="grid-template-columns: repeat(5, minmax(0, 1fr));">
+    <div class="ontop-mini-stats" style="grid-template-columns: repeat(6, minmax(0, 1fr));">
         <div class="ontop-mini-stat">
             <span>Total Leads</span>
             <strong>{total}</strong>
@@ -158,6 +160,10 @@ st.markdown(
         <div class="ontop-mini-stat ontop-mini-stat-amber">
             <span>Conversion Rate</span>
             <strong>{conversion_rate:.1f}%</strong>
+        </div>
+        <div class="ontop-mini-stat ontop-mini-stat-coral">
+            <span>Estimated MRR</span>
+            <strong>${estimated_mrr:,.1f}</strong>
         </div>
     </div>
     """,
@@ -184,6 +190,10 @@ product_stats["conversion_rate"] = (
     product_stats["converted"] / product_stats["total"] * 100
 ).round(1)
 product_stats["conversion_rate_label"] = product_stats["conversion_rate"].map(lambda value: f"{value:.1f}%")
+product_stats["estimated_mrr"] = (
+    df.groupby("product_name")["estimated_mrr"].sum().reindex(product_stats["product_name"]).values
+)
+product_stats["estimated_mrr_label"] = product_stats["estimated_mrr"].map(lambda value: f"${value:,.1f}")
 
 product_chart = (
     base_chart(product_stats)
@@ -267,6 +277,58 @@ if best_product is not None:
 open_shell("ontop-chart-shell")
 st.altair_chart(
     style_chart(alt.layer(product_chart, product_labels, product_rate_line, product_rate_labels).resolve_scale(y="independent")),
+    use_container_width=True,
+)
+close_shell()
+
+st.divider()
+
+# ---------------------------------------------------------------------------
+# Estimated MRR by product
+# ---------------------------------------------------------------------------
+
+st.markdown('<div class="ontop-section-head"><h3>Estimated MRR by Product</h3><p>Understand projected recurring value across the current lead mix.</p></div>', unsafe_allow_html=True)
+
+mrr_chart = (
+    base_chart(product_stats)
+    .mark_bar(cornerRadiusTopLeft=8, cornerRadiusTopRight=8)
+    .encode(
+        x=alt.X("product_name:N", sort="-y", title=None, axis=alt.Axis(labelAngle=0)),
+        y=alt.Y("estimated_mrr:Q", title="Estimated MRR (USD)"),
+        color=alt.Color(
+            "product_name:N",
+            scale=alt.Scale(range=ONTOp_COLORS),
+            legend=None,
+        ),
+        tooltip=[
+            "product_name:N",
+            alt.Tooltip("estimated_mrr:Q", title="Estimated MRR", format=",.1f"),
+            "total:Q",
+            "converted:Q",
+        ],
+    )
+    .properties(height=280)
+)
+
+mrr_labels = (
+    base_chart(product_stats)
+    .mark_text(dy=-10, color="#FFFFFF", fontSize=12, fontWeight="bold")
+    .encode(
+        x=alt.X("product_name:N", sort="-y", title=None, axis=alt.Axis(labelAngle=0)),
+        y=alt.Y("estimated_mrr:Q", title=None, axis=None),
+        text=alt.Text("estimated_mrr_label:N"),
+    )
+)
+
+top_mrr_product = product_stats.loc[product_stats["estimated_mrr"].idxmax()] if not product_stats.empty else None
+if top_mrr_product is not None:
+    st.caption(
+        f"Highest projected MRR: {top_mrr_product['product_name']} (${top_mrr_product['estimated_mrr']:,.1f})."
+    )
+
+open_shell("ontop-chart-shell")
+st.altair_chart(
+    style_chart(alt.layer(mrr_chart, mrr_labels)),
     use_container_width=True,
 )
 close_shell()
@@ -381,29 +443,33 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-agent_display = agent_df[["cr_code", "product_name", "agent_name", "status", "notes", "date"]].rename(
+agent_display = agent_df[["cr_code", "product_name", "agent_name", "status", "estimated_mrr", "notes", "date"]].rename(
     columns={
         "cr_code": "CR Code",
         "product_name": "Product",
         "agent_name": "Agent",
         "status": "Status",
+        "estimated_mrr": "Est. MRR",
         "notes": "Notes",
         "date": "Date",
     }
 )
+agent_display["Est. MRR"] = agent_display["Est. MRR"].map(lambda value: f"${value:,.1f}")
 if is_lead_admin and not agent_df.empty:
     selected_dashboard_delete_ids = set(st.session_state.get("dashboard_delete_ids", []))
-    delete_df = agent_df[["id", "cr_code", "product_name", "agent_name", "status", "notes", "date"]].rename(
+    delete_df = agent_df[["id", "cr_code", "product_name", "agent_name", "status", "estimated_mrr", "notes", "date"]].rename(
         columns={
             "id": "Lead ID",
             "cr_code": "CR Code",
             "product_name": "Product",
             "agent_name": "Agent",
             "status": "Status",
+            "estimated_mrr": "Est. MRR",
             "notes": "Notes",
             "date": "Date",
         }
     ).copy()
+    delete_df["Est. MRR"] = delete_df["Est. MRR"].map(lambda value: f"${value:,.1f}")
     delete_df.insert(0, "Delete", delete_df["Lead ID"].isin(selected_dashboard_delete_ids))
 
     open_shell("ontop-table-shell")
@@ -411,7 +477,7 @@ if is_lead_admin and not agent_df.empty:
         delete_df,
         use_container_width=True,
         hide_index=True,
-        disabled=["Lead ID", "CR Code", "Product", "Agent", "Status", "Notes", "Date"],
+        disabled=["Lead ID", "CR Code", "Product", "Agent", "Status", "Est. MRR", "Notes", "Date"],
         column_config={
             "Delete": st.column_config.CheckboxColumn(
                 "Delete",

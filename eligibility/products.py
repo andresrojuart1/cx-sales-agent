@@ -64,3 +64,10 @@ PRODUCTS = {
 
 PRODUCT_KEYS = list(PRODUCTS.keys())
 PRODUCT_NAMES = {p.key: p.name for p in PRODUCTS.values()}
+PRODUCT_ESTIMATED_MRR = {
+    "quick": 11.9,
+    "future_fund": 3.0,
+    "reserve": 14.9,
+    "tapi": 1.6,
+    "esim": 5.0,
+}
