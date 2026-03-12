@@ -5,6 +5,8 @@ import streamlit as st
 ALLOWED_DOMAIN = "getontop.com"
 LEAD_ADMIN_FALLBACK_EMAILS = {
     "mrojas@getontop.com",
+    "acaballero@getontop.com",
+    "flociccero@getontop.com",
 }
 
 
