@@ -419,52 +419,40 @@ close_shell()
 # Agent leads explorer
 # ---------------------------------------------------------------------------
 
-st.markdown('<div class="ontop-section-head"><h3>Agent Leads</h3><p>Inspect the lead list for the current dashboard filter.</p></div>', unsafe_allow_html=True)
+if is_lead_admin:
+    st.markdown('<div class="ontop-section-head"><h3>Agent Leads</h3><p>Inspect the lead list for the current dashboard filter.</p></div>', unsafe_allow_html=True)
 
-agent_df = df.copy()
+    agent_df = df.copy()
 
-a_total = len(agent_df)
-a_converted = len(agent_df[agent_df["status"] == "Converted"])
-a_active = len(agent_df[agent_df["status"].isin(["Qualified", "Contacted"])])
-a_rate = (a_converted / a_total * 100) if a_total > 0 else 0
+    a_total = len(agent_df)
+    a_converted = len(agent_df[agent_df["status"] == "Converted"])
+    a_active = len(agent_df[agent_df["status"].isin(["Qualified", "Contacted"])])
+    a_rate = (a_converted / a_total * 100) if a_total > 0 else 0
 
-st.markdown(
-    f"""
-    <div class="ontop-mini-stats" style="grid-template-columns: repeat(4, minmax(0, 1fr));">
-        <div class="ontop-mini-stat">
-            <span>Total</span>
-            <strong>{a_total}</strong>
+    st.markdown(
+        f"""
+        <div class="ontop-mini-stats" style="grid-template-columns: repeat(4, minmax(0, 1fr));">
+            <div class="ontop-mini-stat">
+                <span>Total</span>
+                <strong>{a_total}</strong>
+            </div>
+            <div class="ontop-mini-stat ontop-mini-stat-purple">
+                <span>Open</span>
+                <strong>{a_active}</strong>
+            </div>
+            <div class="ontop-mini-stat ontop-mini-stat-green">
+                <span>Converted</span>
+                <strong>{a_converted}</strong>
+            </div>
+            <div class="ontop-mini-stat ontop-mini-stat-amber">
+                <span>Conversion Rate</span>
+                <strong>{a_rate:.1f}%</strong>
+            </div>
         </div>
-        <div class="ontop-mini-stat ontop-mini-stat-purple">
-            <span>Open</span>
-            <strong>{a_active}</strong>
-        </div>
-        <div class="ontop-mini-stat ontop-mini-stat-green">
-            <span>Converted</span>
-            <strong>{a_converted}</strong>
-        </div>
-        <div class="ontop-mini-stat ontop-mini-stat-amber">
-            <span>Conversion Rate</span>
-            <strong>{a_rate:.1f}%</strong>
-        </div>
-    </div>
-    """,
-    unsafe_allow_html=True,
-)
+        """,
+        unsafe_allow_html=True,
+    )
 
-agent_display = agent_df[["cr_code", "product_name", "agent_name", "status", "converted_mrr", "notes", "date"]].rename(
-    columns={
-        "cr_code": "CR Code",
-        "product_name": "Product",
-        "agent_name": "Agent",
-        "status": "Status",
-        "converted_mrr": "MRR",
-        "notes": "Notes",
-        "date": "Date",
-    }
-)
-agent_display["MRR"] = agent_display["MRR"].map(lambda value: f"${value:,.1f}" if value else "—")
-if is_lead_admin and not agent_df.empty:
     selected_dashboard_delete_ids = set(st.session_state.get("dashboard_delete_ids", []))
     delete_df = agent_df[["id", "cr_code", "product_name", "agent_name", "status", "converted_mrr", "notes", "date"]].rename(
         columns={
@@ -520,7 +508,3 @@ if is_lead_admin and not agent_df.empty:
                 st.session_state["dashboard_delete_ids"] = []
                 st.success(f"Deleted {len(selected_delete_ids)} lead(s).")
                 st.rerun()
-else:
-    open_shell("ontop-table-shell")
-    render_table(agent_display.fillna(""))
-    close_shell()
