@@ -1,5 +1,7 @@
 # CX Sales Agent Tool — Implementation Workflow
 
+> Status: historical planning document. Several phases here are already implemented and no longer reflect the current repo exactly. Use [`README.md`](/Users/andresrojas/Python%20codes/cx-sales-agent/README.md), [`docs/operations.md`](/Users/andresrojas/Python%20codes/cx-sales-agent/docs/operations.md), and [`docs/business-rules.md`](/Users/andresrojas/Python%20codes/cx-sales-agent/docs/business-rules.md) as the current operational reference.
+
 > **Project**: Sales Tool for Customer Experience Agents
 > **Objective**: Enable CX agents to identify eligible users, offer add-on products, and track qualified leads for commission.
 > **Generated**: 2026-02-15
