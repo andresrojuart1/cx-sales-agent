@@ -3,6 +3,11 @@
 import streamlit as st
 
 ALLOWED_DOMAIN = "getontop.com"
+LEAD_ADMIN_FALLBACK_EMAILS = {
+    "mrojas@getontop.com",
+    "acaballero@getontop.com",
+    "flociccero@getontop.com",
+}
 
 
 def apply_global_theme():
@@ -580,15 +585,17 @@ def get_lead_admin_emails() -> set[str]:
     raw_value = auth_cfg.get("lead_admin_emails", [])
 
     if isinstance(raw_value, str):
-        return {email.strip().lower() for email in raw_value.split(",") if email.strip()}
+        configured = {email.strip().lower() for email in raw_value.split(",") if email.strip()}
+        return configured or LEAD_ADMIN_FALLBACK_EMAILS
     if isinstance(raw_value, list):
-        return {str(email).strip().lower() for email in raw_value if str(email).strip()}
-    return set()
+        configured = {str(email).strip().lower() for email in raw_value if str(email).strip()}
+        return configured or LEAD_ADMIN_FALLBACK_EMAILS
+    return LEAD_ADMIN_FALLBACK_EMAILS
 
 
 def can_delete_leads() -> bool:
     """Check if the current signed-in user can delete leads."""
-    agent_email = st.session_state.get("agent_email", "")
+    agent_email = st.session_state.get("agent_email", "") or getattr(st.user, "email", "")
     return agent_email.lower() in get_lead_admin_emails()
 
 
