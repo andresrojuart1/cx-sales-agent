@@ -279,6 +279,7 @@ agent_stats = (
 agent_stats["conversion_rate"] = (
     agent_stats["converted"] / agent_stats["total"] * 100
 ).round(1)
+agent_stats["conversion_rate_label"] = agent_stats["conversion_rate"].map(lambda value: f"{value:.1f}%")
 
 open_shell("ontop-table-shell")
 render_table(
@@ -287,9 +288,9 @@ render_table(
             "agent_name": "Agent",
             "total": "Total Leads",
             "converted": "Converted",
-            "conversion_rate": "Conversion %",
+            "conversion_rate_label": "Conversion %",
         }
-    ).fillna("")
+    )[["Agent", "Total Leads", "Converted", "Conversion %"]].fillna("")
 )
 close_shell()
 
