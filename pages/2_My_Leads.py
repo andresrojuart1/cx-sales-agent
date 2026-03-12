@@ -70,7 +70,6 @@ def reset_filters():
     st.session_state["my_leads_status_filter"] = "All"
     st.session_state["my_leads_start_date"] = date.today() - timedelta(days=30)
     st.session_state["my_leads_end_date"] = date.today()
-    st.session_state["my_leads_search_filter"] = ""
 
 st.markdown(
     """
@@ -90,7 +89,7 @@ agent_email = st.session_state["agent_email"]
 # Filters
 # ---------------------------------------------------------------------------
 
-col1, col2, col3, col4, col5 = st.columns([1.1, 1.1, 1.05, 1.35, 0.7], vertical_alignment="bottom")
+col1, col2, col3, col4, col5 = st.columns([1.1, 1.1, 1.05, 1.05, 0.8], vertical_alignment="bottom")
 
 with col1:
     product_filter = st.selectbox(
@@ -122,15 +121,7 @@ with col4:
     )
 
 with col5:
-    search_filter = st.text_input(
-        "Find lead",
-        placeholder="CR code, note, or product",
-        key="my_leads_search_filter",
-    )
-
-filter_action_col, filter_button_col = st.columns([4.4, 0.8], vertical_alignment="bottom")
-with filter_button_col:
-    if st.button("Clear", use_container_width=True):
+    if st.button("Clear", use_container_width=True, type="secondary"):
         reset_filters()
         st.rerun()
 
@@ -169,16 +160,8 @@ base_df = base_df[base_date_mask].copy()
 df["product_name"] = df["product"].map(PRODUCT_NAMES)
 base_df["product_name"] = base_df["product"].map(PRODUCT_NAMES)
 
-if search_filter:
-    search_mask = (
-        df["cr_code"].fillna("").str.contains(search_filter, case=False, na=False)
-        | df["product_name"].fillna("").str.contains(search_filter, case=False, na=False)
-        | df["notes"].fillna("").str.contains(search_filter, case=False, na=False)
-    )
-    df = df[search_mask].copy()
-
 if df.empty:
-    st.info("No leads match the current filters and search term.")
+    st.info("No leads match the current filters.")
     st.stop()
 
 # ---------------------------------------------------------------------------
@@ -219,7 +202,7 @@ st.markdown(
     """,
     unsafe_allow_html=True,
 )
-st.caption(f"Closed leads available: {closed_count}. Use filters or search to narrow the list further.")
+st.caption(f"Closed leads available: {closed_count}. Use filters to narrow the list further.")
 
 # ---------------------------------------------------------------------------
 # Leads table
@@ -257,7 +240,7 @@ if lead_options:
             label_visibility="collapsed",
         )
     with action_c3:
-        update_clicked = st.button("Update", type="primary", use_container_width=True)
+        update_clicked = st.button("Update", type="secondary", use_container_width=True)
 else:
     update_clicked = False
 
