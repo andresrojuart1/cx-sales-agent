@@ -352,6 +352,7 @@ agent_stats = (
     .agg(
         total=("id", "count"),
         converted=("status", lambda s: (s == "Converted").sum()),
+        mrr=("converted_mrr", "sum"),
     )
     .reset_index()
     .sort_values("total", ascending=False)
@@ -360,6 +361,7 @@ agent_stats["conversion_rate"] = (
     agent_stats["converted"] / agent_stats["total"] * 100
 ).round(1)
 agent_stats["conversion_rate_label"] = agent_stats["conversion_rate"].map(lambda value: f"{value:.1f}%")
+agent_stats["mrr_label"] = agent_stats["mrr"].map(lambda value: f"${value:,.1f}")
 
 open_shell("ontop-table-shell")
 render_table(
@@ -368,9 +370,10 @@ render_table(
             "agent_name": "Agent",
             "total": "Total Leads",
             "converted": "Converted",
+            "mrr_label": "MRR",
             "conversion_rate_label": "Conversion %",
         }
-    )[["Agent", "Total Leads", "Converted", "Conversion %"]].fillna("")
+    )[["Agent", "Total Leads", "Converted", "MRR", "Conversion %"]].fillna("")
 )
 close_shell()
 
