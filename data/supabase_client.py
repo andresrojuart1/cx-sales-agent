@@ -100,6 +100,23 @@ def check_opportunity_lock(cr_code: str, product: str) -> dict | None:
     return result.data[0] if result.data else None
 
 
+def get_recent_lead(cr_code: str, product: str) -> dict | None:
+    """Return the most recent lead within the lock window for this opportunity."""
+    client = get_client()
+    cutoff = (datetime.now(timezone.utc) - timedelta(days=_LOCK_WINDOW_DAYS)).isoformat()
+    result = (
+        client.table(_CX_LEADS_TABLE)
+        .select("id, agent_name, agent_email, status, created_at")
+        .eq("cr_code", cr_code)
+        .eq("product", product)
+        .gte("created_at", cutoff)
+        .order("created_at", desc=True)
+        .limit(1)
+        .execute()
+    )
+    return result.data[0] if result.data else None
+
+
 def expire_stale_leads() -> int:
     """Set status='Expired' on active leads older than the lock window.
 
@@ -151,6 +168,18 @@ def update_lead_status(lead_id: str, new_status: str) -> dict:
     result = (
         client.table(_CX_LEADS_TABLE)
         .update({"status": new_status})
+        .eq("id", lead_id)
+        .execute()
+    )
+    return result.data[0] if result.data else {}
+
+
+def delete_lead(lead_id: str) -> dict:
+    """Delete a lead by id and return the deleted row when available."""
+    client = get_client()
+    result = (
+        client.table(_CX_LEADS_TABLE)
+        .delete()
         .eq("id", lead_id)
         .execute()
     )

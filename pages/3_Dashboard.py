@@ -7,11 +7,12 @@ import streamlit as st
 st.set_page_config(page_title="Dashboard", page_icon=":bar_chart:", layout="wide")
 
 from data.conversion import run_conversion_check
-from data.supabase_client import expire_stale_leads, get_leads
+from data.supabase_client import delete_lead, expire_stale_leads, get_leads
 from eligibility.products import PRODUCT_NAMES
-from shared import render_sidebar
+from shared import can_delete_leads, render_sidebar
 
 render_sidebar()
+is_lead_admin = can_delete_leads()
 
 
 ONTOp_COLORS = ["#261C94", "#E35276", "#7C73F7", "#F38BA3", "#B8B8C8"]
@@ -64,55 +65,54 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# ---------------------------------------------------------------------------
-# Conversion & expiration check
-# ---------------------------------------------------------------------------
-
-if st.button("Check Conversions", type="secondary"):
-    with st.spinner("Matching leads against transactions..."):
-        converted = run_conversion_check()
-        expired = expire_stale_leads()
-    if converted:
-        st.success(f"Auto-converted {len(converted)} lead(s)!")
-    if expired:
-        st.info(f"Expired {expired} stale lead(s) (>60 days, not converted)")
-    if not converted and not expired:
-        st.info("No new conversions or expirations detected.")
-    st.rerun()
-
-# ---------------------------------------------------------------------------
-# Time period selector
-# ---------------------------------------------------------------------------
-
-days = st.selectbox(
-    "Time Period",
-    options=[7, 30, 90, 365],
-    format_func=lambda d: f"Last {d} days",
-    index=1,
-)
-
-st.markdown(
-    """
-    <div class="ontop-subtle-card">
-        <p class="ontop-kicker">Time Window</p>
-        <h3 class="ontop-section-title">Choose the analysis period</h3>
-        <p>The charts and metrics below update based on the selected timeframe.</p>
-    </div>
-    """,
-    unsafe_allow_html=True,
-)
-
-# Fetch all leads (no agent filter = team-wide)
-all_leads = get_leads(days=days)
+# Fetch all leads first so the top filter can drive the whole dashboard.
+all_leads = get_leads()
 
 if not all_leads:
     st.info("No leads recorded yet.")
     st.stop()
 
-df = pd.DataFrame(all_leads)
-df["product_name"] = df["product"].map(PRODUCT_NAMES)
-df["created_at"] = pd.to_datetime(df["created_at"])
-df["date"] = df["created_at"].dt.date
+all_df = pd.DataFrame(all_leads)
+all_df["product_name"] = all_df["product"].map(PRODUCT_NAMES)
+all_df["created_at"] = pd.to_datetime(all_df["created_at"])
+all_df["date"] = all_df["created_at"].dt.date
+
+agent_filter_options = ["All Agents"] + sorted(all_df["agent_name"].dropna().unique().tolist())
+
+toolbar_col1, toolbar_col2, toolbar_col3 = st.columns([1.1, 1.3, 1.2], vertical_alignment="bottom")
+with toolbar_col1:
+    days = st.selectbox(
+        "Time Period",
+        options=[7, 30, 90, 365],
+        format_func=lambda d: f"Last {d} days",
+        index=1,
+    )
+with toolbar_col2:
+    selected_agent = st.selectbox(
+        "Agent",
+        options=agent_filter_options,
+    )
+with toolbar_col3:
+    if st.button("Check Conversions", type="secondary", use_container_width=True):
+        with st.spinner("Matching leads against transactions..."):
+            converted = run_conversion_check()
+            expired = expire_stale_leads()
+        if converted:
+            st.success(f"Auto-converted {len(converted)} lead(s)!")
+        if expired:
+            st.info(f"Expired {expired} stale lead(s) (>60 days, not converted)")
+        if not converted and not expired:
+            st.info("No new conversions or expirations detected.")
+        st.rerun()
+
+cutoff = pd.Timestamp.now(tz="UTC") - pd.Timedelta(days=days)
+df = all_df[all_df["created_at"] >= cutoff].copy()
+if selected_agent != "All Agents":
+    df = df[df["agent_name"] == selected_agent].copy()
+
+if df.empty:
+    st.info("No leads match the selected agent and time period.")
+    st.stop()
 
 # ---------------------------------------------------------------------------
 # Top-level metrics
@@ -124,12 +124,33 @@ expired = len(df[df["status"] == "Expired"])
 active = len(df[df["status"].isin(["Qualified", "Contacted"])])
 conversion_rate = (converted / total * 100) if total > 0 else 0
 
-col1, col2, col3, col4, col5 = st.columns(5)
-col1.metric("Total Leads", total)
-col2.metric("Active", active)
-col3.metric("Converted", converted)
-col4.metric("Conversion Rate", f"{conversion_rate:.1f}%")
-col5.metric("Expired", expired)
+st.markdown(
+    f"""
+    <div class="ontop-mini-stats" style="grid-template-columns: repeat(5, minmax(0, 1fr));">
+        <div class="ontop-mini-stat">
+            <span>Total Leads</span>
+            <strong>{total}</strong>
+        </div>
+        <div class="ontop-mini-stat ontop-mini-stat-purple">
+            <span>Open</span>
+            <strong>{active}</strong>
+        </div>
+        <div class="ontop-mini-stat ontop-mini-stat-green">
+            <span>Converted</span>
+            <strong>{converted}</strong>
+        </div>
+        <div class="ontop-mini-stat ontop-mini-stat-red">
+            <span>Expired</span>
+            <strong>{expired}</strong>
+        </div>
+        <div class="ontop-mini-stat ontop-mini-stat-amber">
+            <span>Conversion Rate</span>
+            <strong>{conversion_rate:.1f}%</strong>
+        </div>
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
 
 st.divider()
 
@@ -137,16 +158,7 @@ st.divider()
 # Leads by product
 # ---------------------------------------------------------------------------
 
-st.markdown(
-    """
-    <div class="ontop-subtle-card">
-        <p class="ontop-kicker">Product Performance</p>
-        <h3 class="ontop-section-title">Leads by product</h3>
-        <p>Compare total lead volume and conversion outcomes across the portfolio.</p>
-    </div>
-    """,
-    unsafe_allow_html=True,
-)
+st.markdown('<div class="ontop-section-head"><h3>Leads by Product</h3><p>Compare volume and conversion by product.</p></div>', unsafe_allow_html=True)
 
 product_stats = (
     df.groupby("product_name")
@@ -159,6 +171,7 @@ product_stats = (
 product_stats["conversion_rate"] = (
     product_stats["converted"] / product_stats["total"] * 100
 ).round(1)
+product_stats["conversion_rate_label"] = product_stats["conversion_rate"].map(lambda value: f"{value:.1f}%")
 
 product_chart = (
     base_chart(product_stats)
@@ -181,28 +194,68 @@ product_labels = (
     .mark_text(dy=-10, color="#FFFFFF", fontSize=12, fontWeight="bold")
     .encode(
         x=alt.X("product_name:N", sort="-y", title=None, axis=alt.Axis(labelAngle=0)),
-        y=alt.Y("total:Q", title="Total Leads"),
+        y=alt.Y("total:Q", title=None, axis=None),
         text=alt.Text("total:Q"),
     )
 )
 
+product_rate_line = (
+    base_chart(product_stats)
+    .mark_line(color="#F59E0B", strokeWidth=3, point=alt.OverlayMarkDef(color="#F59E0B", size=90))
+    .encode(
+        x=alt.X("product_name:N", sort="-y", title=None, axis=alt.Axis(labelAngle=0)),
+        y=alt.Y(
+            "conversion_rate:Q",
+            title=None,
+            axis=alt.Axis(orient="right", format=".0f", labelExpr="datum.label + '%'", tickCount=4),
+            scale=alt.Scale(domain=[0, max(15, float(product_stats["conversion_rate"].max()) + 2)]),
+        ),
+        tooltip=[
+            "product_name:N",
+            "total:Q",
+            "converted:Q",
+            alt.Tooltip("conversion_rate:Q", title="Conversion %", format=".1f"),
+        ],
+    )
+)
+
+product_rate_labels = (
+    base_chart(product_stats)
+    .mark_text(dy=-12, color="#FCD34D", fontSize=11, fontWeight="bold")
+    .encode(
+        x=alt.X("product_name:N", sort="-y", title=None, axis=alt.Axis(labelAngle=0)),
+        y=alt.Y(
+            "conversion_rate:Q",
+            title=None,
+            axis=None,
+            scale=alt.Scale(domain=[0, max(15, float(product_stats["conversion_rate"].max()) + 2)]),
+        ),
+        text=alt.Text("conversion_rate_label:N"),
+    )
+)
+
+best_product = product_stats.loc[product_stats["conversion_rate"].idxmax()] if not product_stats.empty else None
+if best_product is not None:
+    legend_col1, legend_col2 = st.columns([4, 1.2], vertical_alignment="center")
+    with legend_col1:
+        st.caption(
+            f"Best conversion rate: {best_product['product_name']} ({best_product['conversion_rate']:.1f}%)."
+        )
+    with legend_col2:
+        st.markdown(
+            """
+            <div style="display:flex;justify-content:flex-end;align-items:center;gap:0.45rem;margin-top:0.1rem;">
+                <span style="display:inline-block;width:0.9rem;height:0.18rem;background:#F59E0B;border-radius:999px;"></span>
+                <span style="color:#FCD34D;font-size:0.88rem;font-weight:600;">Conversion Rate</span>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
 open_shell("ontop-chart-shell")
 st.altair_chart(
-    style_chart(alt.layer(product_chart, product_labels)),
+    style_chart(alt.layer(product_chart, product_labels, product_rate_line, product_rate_labels).resolve_scale(y="independent")),
     use_container_width=True,
-)
-close_shell()
-
-open_shell("ontop-table-shell")
-render_table(
-    product_stats.rename(
-        columns={
-            "product_name": "Product",
-            "total": "Total Leads",
-            "converted": "Converted",
-            "conversion_rate": "Conversion %",
-        }
-    ).fillna("")
 )
 close_shell()
 
@@ -212,16 +265,7 @@ st.divider()
 # Leads by agent
 # ---------------------------------------------------------------------------
 
-st.markdown(
-    """
-    <div class="ontop-subtle-card">
-        <p class="ontop-kicker">Ownership</p>
-        <h3 class="ontop-section-title">Leads by agent</h3>
-        <p>See who is generating the most opportunities and how often those leads convert.</p>
-    </div>
-    """,
-    unsafe_allow_html=True,
-)
+st.markdown('<div class="ontop-section-head"><h3>Leads by Agent</h3><p>See who is generating the most opportunities and how often they convert.</p></div>', unsafe_allow_html=True)
 
 agent_stats = (
     df.groupby("agent_name")
@@ -255,16 +299,7 @@ st.divider()
 # Leads over time
 # ---------------------------------------------------------------------------
 
-st.markdown(
-    """
-    <div class="ontop-subtle-card">
-        <p class="ontop-kicker">Trend</p>
-        <h3 class="ontop-section-title">Leads over time</h3>
-        <p>Track daily lead creation to spot surges, slowdowns, or campaign impact.</p>
-    </div>
-    """,
-    unsafe_allow_html=True,
-)
+st.markdown('<div class="ontop-section-head"><h3>Leads Over Time</h3><p>Track daily lead creation to spot surges and slowdowns.</p></div>', unsafe_allow_html=True)
 
 daily = df.groupby("date").size().reset_index(name="leads")
 
@@ -297,91 +332,41 @@ st.altair_chart(
 close_shell()
 
 # ---------------------------------------------------------------------------
-# Status breakdown
-# ---------------------------------------------------------------------------
-
-st.markdown(
-    """
-    <div class="ontop-subtle-card">
-        <p class="ontop-kicker">Status Mix</p>
-        <h3 class="ontop-section-title">Status breakdown</h3>
-        <p>Understand how the current pipeline is distributed across active and terminal states.</p>
-    </div>
-    """,
-    unsafe_allow_html=True,
-)
-
-status_df = df["status"].value_counts().reset_index()
-status_df.columns = ["Status", "Count"]
-
-status_chart = (
-    base_chart(status_df)
-    .mark_arc(innerRadius=70, outerRadius=120)
-    .encode(
-        theta=alt.Theta("Count:Q"),
-        color=alt.Color(
-            "Status:N",
-            scale=alt.Scale(
-                domain=["Qualified", "Contacted", "Converted", "Rejected", "Expired"],
-                range=["#7C73F7", "#B8B8C8", "#E35276", "#6B6B7E", "#261C94"],
-            ),
-        ),
-        tooltip=["Status:N", "Count:Q"],
-    )
-    .properties(height=320)
-)
-
-status_labels = (
-    base_chart(status_df)
-    .mark_text(radius=145, color="#FFFFFF", fontSize=12, fontWeight="bold")
-    .encode(
-        theta=alt.Theta("Count:Q"),
-        text=alt.Text("Count:Q"),
-    )
-)
-
-open_shell("ontop-chart-shell")
-st.altair_chart(
-    style_chart(alt.layer(status_chart, status_labels)),
-    use_container_width=True,
-)
-close_shell()
-
-st.divider()
-
-# ---------------------------------------------------------------------------
 # Agent leads explorer
 # ---------------------------------------------------------------------------
 
-st.markdown(
-    """
-    <div class="ontop-subtle-card">
-        <p class="ontop-kicker">Explorer</p>
-        <h3 class="ontop-section-title">Agent leads</h3>
-        <p>Drill into a single owner to inspect lead quality, status, and recent output.</p>
-    </div>
-    """,
-    unsafe_allow_html=True,
-)
+st.markdown('<div class="ontop-section-head"><h3>Agent Leads</h3><p>Inspect the lead list for the current dashboard filter.</p></div>', unsafe_allow_html=True)
 
-agent_names = sorted(df["agent_name"].unique().tolist())
-selected_agent = st.selectbox(
-    "Select Agent",
-    options=["All Agents"] + agent_names,
-)
-
-agent_df = df if selected_agent == "All Agents" else df[df["agent_name"] == selected_agent]
+agent_df = df.copy()
 
 a_total = len(agent_df)
 a_converted = len(agent_df[agent_df["status"] == "Converted"])
 a_active = len(agent_df[agent_df["status"].isin(["Qualified", "Contacted"])])
 a_rate = (a_converted / a_total * 100) if a_total > 0 else 0
 
-mc1, mc2, mc3, mc4 = st.columns(4)
-mc1.metric("Total", a_total)
-mc2.metric("Active", a_active)
-mc3.metric("Converted", a_converted)
-mc4.metric("Conversion Rate", f"{a_rate:.1f}%")
+st.markdown(
+    f"""
+    <div class="ontop-mini-stats" style="grid-template-columns: repeat(4, minmax(0, 1fr));">
+        <div class="ontop-mini-stat">
+            <span>Total</span>
+            <strong>{a_total}</strong>
+        </div>
+        <div class="ontop-mini-stat ontop-mini-stat-purple">
+            <span>Open</span>
+            <strong>{a_active}</strong>
+        </div>
+        <div class="ontop-mini-stat ontop-mini-stat-green">
+            <span>Converted</span>
+            <strong>{a_converted}</strong>
+        </div>
+        <div class="ontop-mini-stat ontop-mini-stat-amber">
+            <span>Conversion Rate</span>
+            <strong>{a_rate:.1f}%</strong>
+        </div>
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
 
 agent_display = agent_df[["cr_code", "product_name", "agent_name", "status", "notes", "date"]].rename(
     columns={
@@ -393,6 +378,58 @@ agent_display = agent_df[["cr_code", "product_name", "agent_name", "status", "no
         "date": "Date",
     }
 )
-open_shell("ontop-table-shell")
-render_table(agent_display.fillna(""))
-close_shell()
+if is_lead_admin and not agent_df.empty:
+    delete_df = agent_df[["id", "cr_code", "product_name", "agent_name", "status", "notes", "date"]].rename(
+        columns={
+            "id": "Lead ID",
+            "cr_code": "CR Code",
+            "product_name": "Product",
+            "agent_name": "Agent",
+            "status": "Status",
+            "notes": "Notes",
+            "date": "Date",
+        }
+    ).copy()
+    delete_df.insert(0, "Delete", False)
+
+    open_shell("ontop-table-shell")
+    edited_delete_df = st.data_editor(
+        delete_df,
+        use_container_width=True,
+        hide_index=True,
+        disabled=["Lead ID", "CR Code", "Product", "Agent", "Status", "Notes", "Date"],
+        column_config={
+            "Delete": st.column_config.CheckboxColumn(
+                "Delete",
+                help="Select lead(s) to remove",
+                default=False,
+            ),
+            "Lead ID": st.column_config.TextColumn("Lead ID", width="small"),
+        },
+        key="dashboard_delete_editor",
+    )
+    close_shell()
+
+    selected_delete_ids = edited_delete_df.loc[edited_delete_df["Delete"], "Lead ID"].tolist()
+
+    admin_col1, admin_col2 = st.columns([3, 2])
+    with admin_col1:
+        confirm_dashboard_delete = st.checkbox(
+            f"I understand this will permanently delete {len(selected_delete_ids)} selected lead(s).",
+            key="dashboard_delete_confirm",
+        )
+    with admin_col2:
+        if st.button("Delete Selected Leads", type="secondary", key="dashboard_delete_btn", use_container_width=True):
+            if not selected_delete_ids:
+                st.warning("Select at least one lead to delete.")
+            elif not confirm_dashboard_delete:
+                st.warning("Confirm deletion before removing leads.")
+            else:
+                for lead_id in selected_delete_ids:
+                    delete_lead(lead_id)
+                st.success(f"Deleted {len(selected_delete_ids)} lead(s).")
+                st.rerun()
+else:
+    open_shell("ontop-table-shell")
+    render_table(agent_display.fillna(""))
+    close_shell()

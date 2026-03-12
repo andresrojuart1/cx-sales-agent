@@ -1,5 +1,7 @@
 """My Leads — View and manage leads submitted by the current agent."""
 
+from datetime import datetime, timezone
+
 import pandas as pd
 import streamlit as st
 
@@ -26,6 +28,49 @@ def render_table(df: pd.DataFrame):
         unsafe_allow_html=True,
     )
 
+
+def render_status_badge(status: str) -> str:
+    tones = {
+        "Qualified": "green",
+        "Contacted": "purple",
+        "Converted": "coral",
+        "Rejected": "gray",
+        "Expired": "amber",
+    }
+    tone = tones.get(status, "gray")
+    return f'<span class="ontop-status-badge ontop-status-{tone}">{status}</span>'
+
+
+def format_cr_code(cr_code: str) -> str:
+    return f"<strong>{cr_code}</strong>"
+
+
+def format_notes(notes: str) -> str:
+    if not notes:
+        return '<span style="color:#6B6B7E;">No notes</span>'
+    compact = " ".join(str(notes).split())
+    if len(compact) <= 72:
+        return compact
+    short = compact[:69].rstrip()
+    return f'<span title="{compact}">{short}...</span>'
+
+
+def format_date_cell(raw_value: str) -> str:
+    created_at = pd.to_datetime(raw_value, utc=True)
+    age_days = (datetime.now(timezone.utc) - created_at.to_pydatetime()).days
+    age_text = "Today" if age_days <= 0 else f"{age_days}d ago"
+    return (
+        f"{created_at.strftime('%Y-%m-%d %H:%M')}"
+        f"<br><span style='color:#6B6B7E;font-size:0.78rem;'>{age_text}</span>"
+    )
+
+
+def reset_filters():
+    st.session_state["my_leads_product_filter"] = "All"
+    st.session_state["my_leads_status_filter"] = "All"
+    st.session_state["my_leads_days_filter"] = 30
+    st.session_state["my_leads_search_filter"] = ""
+
 st.markdown(
     """
     <section class="ontop-hero">
@@ -44,30 +89,21 @@ agent_email = st.session_state["agent_email"]
 # Filters
 # ---------------------------------------------------------------------------
 
-col1, col2, col3 = st.columns(3)
-
-st.markdown(
-    """
-    <div class="ontop-subtle-card">
-        <p class="ontop-kicker">Filters</p>
-        <h3 class="ontop-section-title">Refine your pipeline view</h3>
-        <p>Narrow the list to focus on the products and time ranges that need action.</p>
-    </div>
-    """,
-    unsafe_allow_html=True,
-)
+col1, col2, col3, col4, col5 = st.columns([1.1, 1.1, 1.05, 1.35, 0.7], vertical_alignment="bottom")
 
 with col1:
     product_filter = st.selectbox(
         "Product",
         options=["All"] + PRODUCT_KEYS,
         format_func=lambda x: "All Products" if x == "All" else PRODUCT_NAMES.get(x, x),
+        key="my_leads_product_filter",
     )
 
 with col2:
     status_filter = st.selectbox(
         "Status",
         options=["All", "Qualified", "Contacted", "Converted", "Rejected", "Expired"],
+        key="my_leads_status_filter",
     )
 
 with col3:
@@ -76,7 +112,20 @@ with col3:
         options=[7, 30, 90, 365],
         format_func=lambda d: f"Last {d} days",
         index=1,
+        key="my_leads_days_filter",
     )
+
+with col4:
+    search_filter = st.text_input(
+        "Find lead",
+        placeholder="CR code, note, or product",
+        key="my_leads_search_filter",
+    )
+
+with col5:
+    if st.button("Clear", use_container_width=True):
+        reset_filters()
+        st.rerun()
 
 # ---------------------------------------------------------------------------
 # Fetch leads
@@ -95,58 +144,111 @@ if not leads:
     st.stop()
 
 df = pd.DataFrame(leads)
+base_df = df.copy()
 
 # Display-friendly columns
 df["product_name"] = df["product"].map(PRODUCT_NAMES)
-df["created"] = pd.to_datetime(df["created_at"]).dt.strftime("%Y-%m-%d %H:%M")
+base_df["product_name"] = base_df["product"].map(PRODUCT_NAMES)
+
+if search_filter:
+    search_mask = (
+        df["cr_code"].fillna("").str.contains(search_filter, case=False, na=False)
+        | df["product_name"].fillna("").str.contains(search_filter, case=False, na=False)
+        | df["notes"].fillna("").str.contains(search_filter, case=False, na=False)
+    )
+    df = df[search_mask].copy()
+
+if df.empty:
+    st.info("No leads match the current filters and search term.")
+    st.stop()
 
 # ---------------------------------------------------------------------------
 # Summary
 # ---------------------------------------------------------------------------
 
+active_count = len(base_df[base_df["status"].isin(["Qualified", "Contacted"])])
+closed_count = len(base_df[base_df["status"].isin(["Converted", "Rejected", "Expired"])])
+recent_converted = len(
+    base_df[
+        (base_df["status"] == "Converted")
+        & (pd.to_datetime(base_df["created_at"], utc=True) >= (pd.Timestamp.now(tz="UTC") - pd.Timedelta(days=30)))
+    ]
+)
+needs_follow_up = len(
+    base_df[
+        (base_df["status"].isin(["Qualified", "Contacted"]))
+        & (pd.to_datetime(base_df["created_at"], utc=True) < (pd.Timestamp.now(tz="UTC") - pd.Timedelta(days=14)))
+    ]
+)
+
 st.markdown(
-    """
-    <div class="ontop-subtle-card">
-        <p class="ontop-kicker">Summary</p>
-        <h3 class="ontop-section-title">Lead volume and status mix</h3>
-        <p>Use the metrics below to understand your current workload and recent movement.</p>
+    f"""
+    <div class="ontop-mini-stats">
+        <div class="ontop-mini-stat ontop-mini-stat-purple">
+            <span>Open</span>
+            <strong>{active_count}</strong>
+        </div>
+        <div class="ontop-mini-stat">
+            <span>Need Follow-up</span>
+            <strong>{needs_follow_up}</strong>
+        </div>
+        <div class="ontop-mini-stat ontop-mini-stat-green">
+            <span>Converted (30d)</span>
+            <strong>{recent_converted}</strong>
+        </div>
     </div>
     """,
     unsafe_allow_html=True,
 )
-
-st.metric("Total Leads", len(df))
-
-status_counts = df["status"].value_counts()
-scols = st.columns(5)
-for i, status in enumerate(["Qualified", "Contacted", "Converted", "Rejected", "Expired"]):
-    with scols[i]:
-        st.metric(status, status_counts.get(status, 0))
-
-st.divider()
+st.caption(f"Closed leads available: {closed_count}. Use filters or search to narrow the list further.")
 
 # ---------------------------------------------------------------------------
 # Leads table
 # ---------------------------------------------------------------------------
 
+lead_options = {
+    f"{row['cr_code']} — {PRODUCT_NAMES.get(row['product'], row['product'])} ({row['status']})": row["id"]
+    for _, row in df.iterrows()
+}
+
 st.markdown(
     """
-    <div class="ontop-subtle-card">
-        <p class="ontop-kicker">Lead Details</p>
-        <h3 class="ontop-section-title">Review every lead in the current result set</h3>
-        <p>Check notes and current status before making updates.</p>
+    <div class="ontop-toolbar">
+        <div class="ontop-toolbar-copy">
+            <h3>Lead Details</h3>
+            <p>Review notes and status, then update a selected lead.</p>
+        </div>
     </div>
     """,
     unsafe_allow_html=True,
 )
 
-display_df = df[["cr_code", "product_name", "status", "notes", "created"]].rename(
-    columns={
-        "cr_code": "CR Code",
-        "product_name": "Product",
-        "status": "Status",
-        "notes": "Notes",
-        "created": "Date",
+if lead_options:
+    action_c1, action_c2, action_c3 = st.columns([2.6, 1.2, 0.8], vertical_alignment="bottom")
+    with action_c1:
+        selected_label = st.selectbox(
+            "Lead",
+            options=list(lead_options.keys()),
+            label_visibility="collapsed",
+        )
+    with action_c2:
+        new_status = st.selectbox(
+            "Status",
+            options=["Qualified", "Contacted", "Converted", "Rejected", "Expired"],
+            label_visibility="collapsed",
+        )
+    with action_c3:
+        update_clicked = st.button("Update", type="primary", use_container_width=True)
+else:
+    update_clicked = False
+
+display_df = pd.DataFrame(
+    {
+        "CR Code": df["cr_code"].map(format_cr_code),
+        "Product": df["product_name"],
+        "Status": df["status"].map(render_status_badge),
+        "Notes": df["notes"].map(format_notes),
+        "Date": df["created_at"].map(format_date_cell),
     }
 )
 
@@ -154,35 +256,11 @@ open_table_shell()
 render_table(display_df.fillna(""))
 close_shell()
 
-# ---------------------------------------------------------------------------
-# Status update
-# ---------------------------------------------------------------------------
+if lead_options and update_clicked:
+    lead_id = lead_options[selected_label]
+    update_lead_status(lead_id, new_status)
+    st.session_state["leads_feedback"] = f"Lead updated to {new_status}."
+    st.rerun()
 
-st.divider()
-st.markdown(
-    """
-    <div class="ontop-subtle-card">
-        <p class="ontop-kicker">Update Workflow</p>
-        <h3 class="ontop-section-title">Change the status of an existing lead</h3>
-        <p>Select the lead to update and apply the new outcome.</p>
-    </div>
-    """,
-    unsafe_allow_html=True,
-)
-
-lead_options = {
-    f"{row['cr_code']} — {PRODUCT_NAMES.get(row['product'], row['product'])} ({row['status']})": row["id"]
-    for _, row in df.iterrows()
-}
-
-if lead_options:
-    selected_label = st.selectbox("Select a lead", options=list(lead_options.keys()))
-    new_status = st.selectbox(
-        "New status",
-        options=["Qualified", "Contacted", "Converted", "Rejected", "Expired"],
-    )
-    if st.button("Update Status", type="primary"):
-        lead_id = lead_options[selected_label]
-        update_lead_status(lead_id, new_status)
-        st.success(f"Updated to **{new_status}**")
-        st.rerun()
+if st.session_state.get("leads_feedback"):
+    st.toast(st.session_state.pop("leads_feedback"))

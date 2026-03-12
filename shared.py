@@ -90,6 +90,11 @@ def apply_global_theme():
                 border-radius: 18px;
             }
 
+            div[data-testid="stExpander"] {
+                margin-top: 0.85rem;
+                overflow: hidden;
+            }
+
             div[data-testid="stMetric"] {
                 padding: 1rem;
             }
@@ -131,11 +136,16 @@ def apply_global_theme():
             }
 
             .ontop-subtle-card {
-                padding: 1rem 1.1rem;
+                padding: 0.8rem 0.95rem;
                 border-radius: 18px;
                 border: 1px solid var(--border-color);
                 background: linear-gradient(180deg, rgba(26, 26, 36, 0.92), rgba(6, 6, 9, 0.92));
-                margin-bottom: 1rem;
+                margin-bottom: 0.85rem;
+            }
+
+            .ontop-profile-summary {
+                padding: 0.8rem 0.95rem;
+                margin-bottom: 0.55rem;
             }
 
             .ontop-subtle-card h3,
@@ -144,8 +154,8 @@ def apply_global_theme():
             }
 
             .ontop-section-title {
-                margin-top: 0.2rem;
-                margin-bottom: 0.9rem;
+                margin-top: 0.15rem;
+                margin-bottom: 0.55rem;
             }
 
             .ontop-kicker {
@@ -157,13 +167,58 @@ def apply_global_theme():
             }
 
             .ontop-profile-card {
-                padding: 1.15rem;
+                padding: 0.95rem 1rem;
                 border-radius: 20px;
                 border: 1px solid var(--border-color);
                 background:
                     radial-gradient(circle at top right, rgba(227, 82, 118, 0.10), transparent 35%),
                     linear-gradient(180deg, rgba(26, 26, 36, 0.95), rgba(6, 6, 9, 0.95));
-                min-height: 160px;
+                min-height: 0;
+            }
+
+            .ontop-panel-card {
+                padding: 0.95rem 1rem;
+                border-radius: 20px;
+                border: 1px solid var(--border-color);
+                background:
+                    radial-gradient(circle at top right, rgba(227, 82, 118, 0.10), transparent 35%),
+                    linear-gradient(180deg, rgba(26, 26, 36, 0.95), rgba(6, 6, 9, 0.95));
+            }
+
+            .ontop-tight-columns {
+                gap: 0.75rem;
+            }
+
+            .ontop-profile-meta {
+                margin-top: 0.3rem;
+                color: var(--text-secondary);
+                font-size: 0.92rem;
+            }
+
+            .ontop-profile-value {
+                margin-top: 0.8rem;
+            }
+
+            .ontop-profile-label {
+                display: block;
+                color: var(--text-muted);
+                font-size: 0.78rem;
+                text-transform: uppercase;
+                letter-spacing: 0.06em;
+                margin-bottom: 0.22rem;
+            }
+
+            .ontop-profile-strong {
+                color: #FFFFFF;
+                font-size: 1.4rem;
+                font-weight: 700;
+                line-height: 1.1;
+            }
+
+            .ontop-profile-text {
+                color: var(--text-primary);
+                font-size: 0.95rem;
+                line-height: 1.25;
             }
 
             .ontop-profile-card code {
@@ -188,15 +243,87 @@ def apply_global_theme():
                 margin-bottom: 0.15rem;
             }
 
+            .ontop-mini-stats {
+                display: grid;
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+                gap: 0.75rem;
+                margin: 0.65rem 0 0.35rem;
+            }
+
+            .ontop-mini-stat {
+                padding: 0.85rem 0.95rem;
+                border-radius: 20px;
+                border: 1px solid var(--border-color);
+                background:
+                    radial-gradient(circle at top right, rgba(227, 82, 118, 0.10), transparent 35%),
+                    linear-gradient(180deg, rgba(26, 26, 36, 0.95), rgba(6, 6, 9, 0.95));
+            }
+
+            .ontop-mini-stat-purple {
+                background:
+                    radial-gradient(circle at top right, rgba(124, 115, 247, 0.18), transparent 35%),
+                    linear-gradient(180deg, rgba(27, 24, 57, 0.96), rgba(10, 10, 22, 0.96));
+                border-color: rgba(124, 115, 247, 0.22);
+            }
+
+            .ontop-mini-stat-green {
+                background:
+                    radial-gradient(circle at top right, rgba(34, 197, 94, 0.18), transparent 35%),
+                    linear-gradient(180deg, rgba(12, 40, 26, 0.96), rgba(6, 18, 11, 0.96));
+                border-color: rgba(34, 197, 94, 0.22);
+            }
+
+            .ontop-mini-stat-coral {
+                background:
+                    radial-gradient(circle at top right, rgba(227, 82, 118, 0.18), transparent 35%),
+                    linear-gradient(180deg, rgba(40, 15, 25, 0.96), rgba(16, 7, 12, 0.96));
+                border-color: rgba(227, 82, 118, 0.22);
+            }
+
+            .ontop-mini-stat-amber {
+                background:
+                    radial-gradient(circle at top right, rgba(245, 158, 11, 0.18), transparent 35%),
+                    linear-gradient(180deg, rgba(45, 27, 9, 0.96), rgba(18, 11, 5, 0.96));
+                border-color: rgba(245, 158, 11, 0.22);
+            }
+
+            .ontop-mini-stat-red {
+                background:
+                    radial-gradient(circle at top right, rgba(239, 68, 68, 0.18), transparent 35%),
+                    linear-gradient(180deg, rgba(45, 14, 14, 0.96), rgba(20, 7, 7, 0.96));
+                border-color: rgba(239, 68, 68, 0.22);
+            }
+
+            .ontop-mini-stat span {
+                display: block;
+                color: var(--text-muted);
+                font-size: 0.78rem;
+                margin-bottom: 0.3rem;
+            }
+
+            .ontop-mini-stat strong {
+                display: block;
+                color: #FFFFFF;
+                font-size: 1.9rem;
+                line-height: 1;
+            }
+
+            .ontop-compact-note {
+                color: var(--text-secondary);
+                font-size: 0.92rem;
+                margin: 0.35rem 0 0.85rem;
+            }
+
             .ontop-table-shell,
             .ontop-chart-shell {
-                padding: 0.8rem;
+                padding: 0;
                 border-radius: 20px;
                 border: 1px solid var(--border-color);
                 background:
                     radial-gradient(circle at top right, rgba(38, 28, 148, 0.12), transparent 28%),
                     linear-gradient(180deg, rgba(6, 6, 9, 0.96), rgba(26, 26, 36, 0.92));
                 margin-bottom: 1rem;
+                overflow: hidden;
             }
 
             .ontop-chart-shell [data-testid="stVegaLiteChart"],
@@ -235,10 +362,234 @@ def apply_global_theme():
             .ontop-html-table tr:hover td {
                 background: #101018;
             }
+
+            .ontop-status-badge {
+                display: inline-flex;
+                align-items: center;
+                gap: 0.35rem;
+                padding: 0.22rem 0.55rem;
+                border-radius: 999px;
+                font-size: 0.76rem;
+                font-weight: 700;
+                letter-spacing: 0.03em;
+                white-space: nowrap;
+            }
+
+            .ontop-status-badge::before {
+                content: "";
+                width: 0.45rem;
+                height: 0.45rem;
+                border-radius: 999px;
+                background: currentColor;
+                opacity: 0.9;
+            }
+
+            .ontop-status-green {
+                background: rgba(34, 197, 94, 0.12);
+                color: #7ee2a8;
+                border: 1px solid rgba(34, 197, 94, 0.3);
+            }
+
+            .ontop-status-purple {
+                background: rgba(124, 115, 247, 0.14);
+                color: #b5afff;
+                border: 1px solid rgba(124, 115, 247, 0.32);
+            }
+
+            .ontop-status-coral {
+                background: rgba(227, 82, 118, 0.14);
+                color: #ff9ab0;
+                border: 1px solid rgba(227, 82, 118, 0.32);
+            }
+
+            .ontop-status-gray {
+                background: rgba(184, 184, 200, 0.12);
+                color: #d5d5df;
+                border: 1px solid rgba(184, 184, 200, 0.24);
+            }
+
+            .ontop-status-amber {
+                background: rgba(245, 158, 11, 0.12);
+                color: #f8c56a;
+                border: 1px solid rgba(245, 158, 11, 0.28);
+            }
+
+            .ontop-feedback-card {
+                padding: 0.85rem 1rem;
+                border-radius: 16px;
+                border: 1px solid var(--border-color);
+                background: rgba(6, 6, 9, 0.9);
+                margin: 0.7rem 0 0.8rem;
+            }
+
+            .ontop-feedback-card strong,
+            .ontop-feedback-card span {
+                color: #FFFFFF;
+            }
+
+            .ontop-feedback-card p {
+                margin: 0.35rem 0 0;
+                color: var(--text-secondary);
+                font-size: 0.9rem;
+            }
+
+            .ontop-toolbar {
+                display: flex;
+                align-items: end;
+                justify-content: space-between;
+                gap: 1rem;
+                padding: 0.85rem 1rem;
+                border: 1px solid var(--border-color);
+                border-radius: 18px;
+                background: linear-gradient(180deg, rgba(26, 26, 36, 0.92), rgba(6, 6, 9, 0.92));
+                margin-bottom: 0.75rem;
+            }
+
+            .ontop-toolbar-copy h3 {
+                margin: 0;
+            }
+
+            .ontop-toolbar-copy p {
+                margin: 0.25rem 0 0;
+                color: var(--text-secondary);
+            }
+
+            .ontop-section-head {
+                margin: 0.25rem 0 0.75rem;
+            }
+
+            .ontop-section-head h3 {
+                margin: 0;
+            }
+
+            .ontop-section-head p {
+                margin: 0.25rem 0 0;
+                color: var(--text-secondary);
+            }
+
+            .ontop-product-grid {
+                display: grid;
+                grid-template-columns: repeat(5, minmax(0, 1fr));
+                gap: 1rem;
+                align-items: stretch;
+            }
+
+            .ontop-product-card {
+                display: flex;
+                flex-direction: column;
+                gap: 0.8rem;
+                padding: 1rem;
+                min-height: 100%;
+                border-radius: 22px;
+                border: 1px solid var(--border-color);
+                background:
+                    radial-gradient(circle at top right, rgba(227, 82, 118, 0.10), transparent 35%),
+                    linear-gradient(180deg, rgba(26, 26, 36, 0.96), rgba(6, 6, 9, 0.96));
+            }
+
+            .ontop-product-card-green {
+                background:
+                    radial-gradient(circle at top right, rgba(34, 197, 94, 0.18), transparent 35%),
+                    linear-gradient(180deg, rgba(12, 40, 26, 0.96), rgba(6, 18, 11, 0.96));
+                border-color: rgba(34, 197, 94, 0.24);
+            }
+
+            .ontop-product-card-purple {
+                background:
+                    radial-gradient(circle at top right, rgba(124, 115, 247, 0.16), transparent 35%),
+                    linear-gradient(180deg, rgba(27, 24, 57, 0.96), rgba(10, 10, 22, 0.96));
+                border-color: rgba(124, 115, 247, 0.24);
+            }
+
+            .ontop-product-card-coral {
+                background:
+                    radial-gradient(circle at top right, rgba(227, 82, 118, 0.12), transparent 35%),
+                    linear-gradient(180deg, rgba(32, 16, 24, 0.96), rgba(9, 8, 12, 0.96));
+            }
+
+            .ontop-product-card h3 {
+                margin: 0;
+                font-size: 1.1rem;
+            }
+
+            .ontop-product-card p {
+                margin: 0;
+            }
+
+            .ontop-product-desc {
+                color: var(--text-muted);
+                font-size: 0.88rem;
+            }
+
+            .ontop-product-pitch {
+                color: #f2f2f7;
+                font-size: 0.98rem;
+                line-height: 1.45;
+                min-height: 5.2rem;
+            }
+
+            .ontop-product-footer {
+                margin-top: auto;
+            }
+
+            .ontop-product-state {
+                padding-top: 0.2rem;
+                border-top: 1px solid rgba(255, 255, 255, 0.08);
+            }
+
+            .ontop-product-state p {
+                color: var(--text-secondary);
+                font-size: 0.95rem;
+                line-height: 1.45;
+            }
+
+            .ontop-control-strip {
+                padding: 0.85rem 1rem;
+                border-radius: 22px;
+                border: 1px solid var(--border-color);
+                background:
+                    radial-gradient(circle at top right, rgba(227, 82, 118, 0.10), transparent 35%),
+                    linear-gradient(180deg, rgba(26, 26, 36, 0.95), rgba(6, 6, 9, 0.95));
+                margin-bottom: 0.8rem;
+            }
+
+            @media (max-width: 1200px) {
+                .ontop-product-grid {
+                    grid-template-columns: repeat(2, minmax(0, 1fr));
+                }
+            }
+
+            @media (max-width: 700px) {
+                .ontop-product-grid {
+                    grid-template-columns: 1fr;
+                }
+
+                .ontop-mini-stats {
+                    grid-template-columns: repeat(2, minmax(0, 1fr));
+                }
+            }
         </style>
         """,
         unsafe_allow_html=True,
     )
+
+
+def get_lead_admin_emails() -> set[str]:
+    """Return the set of emails allowed to delete leads."""
+    auth_cfg = st.secrets.get("auth", {})
+    raw_value = auth_cfg.get("lead_admin_emails", [])
+
+    if isinstance(raw_value, str):
+        return {email.strip().lower() for email in raw_value.split(",") if email.strip()}
+    if isinstance(raw_value, list):
+        return {str(email).strip().lower() for email in raw_value if str(email).strip()}
+    return set()
+
+
+def can_delete_leads() -> bool:
+    """Check if the current signed-in user can delete leads."""
+    agent_email = st.session_state.get("agent_email", "")
+    return agent_email.lower() in get_lead_admin_emails()
 
 
 def require_auth():

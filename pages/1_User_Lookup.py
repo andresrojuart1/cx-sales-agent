@@ -8,7 +8,7 @@ from datetime import datetime, timezone
 import re
 
 from data.redshift import get_contractor_profile, search_contractors
-from data.supabase_client import check_opportunity_lock, save_lead
+from data.supabase_client import check_opportunity_lock, get_recent_lead, save_lead
 from eligibility.engine import count_eligible, get_user_eligibility
 from eligibility.products import PRODUCTS
 from shared import render_sidebar
@@ -32,20 +32,25 @@ def parse_supabase_timestamp(raw_value: str) -> datetime:
     normalized = re.sub(r"\.(\d{1,5})([+-]\d{2}:\d{2})$", lambda m: f".{m.group(1).ljust(6, '0')}{m.group(2)}", raw_value)
     return datetime.fromisoformat(normalized)
 
+
+def render_feedback_card(title: str, body: str, tone: str):
+    st.markdown(
+        f"""
+        <div class="ontop-feedback-card">
+            <span class="ontop-status-badge ontop-status-{tone}">{title}</span>
+            <p>{body}</p>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def render_status_badge(label: str, tone: str):
+    return f'<span class="ontop-status-badge ontop-status-{tone}">{label}</span>'
+
 # ---------------------------------------------------------------------------
 # Search
 # ---------------------------------------------------------------------------
-
-st.markdown(
-    """
-    <div class="ontop-subtle-card">
-        <p class="ontop-kicker">Search</p>
-        <h3 class="ontop-section-title">Locate a contractor</h3>
-        <p>Start with a CR code for the fastest match, or search by email or full name.</p>
-    </div>
-    """,
-    unsafe_allow_html=True,
-)
 
 search_term = st.text_input(
     "Search by CR Code, email, or name",
@@ -105,27 +110,42 @@ if not profile:
 # ---------------------------------------------------------------------------
 
 st.divider()
-st.markdown(
-    f"""
-    <div class="ontop-subtle-card">
-        <p class="ontop-kicker">Contractor Profile</p>
-        <h3 class="ontop-section-title">{profile.get('full_name', 'N/A')}</h3>
-        <p>Reference profile details before you pitch products or create a lead.</p>
-    </div>
-    """,
-    unsafe_allow_html=True,
-)
+col0, col1, col2, col3 = st.columns(4)
 
-col1, col2, col3 = st.columns(3)
+with col0:
+    st.markdown(
+        f"""
+        <div class="ontop-profile-card">
+            <p class="ontop-kicker">Contractor Profile</p>
+            <div class="ontop-profile-value">
+                <div class="ontop-profile-strong">{profile.get('full_name', 'N/A')}</div>
+            </div>
+            <div class="ontop-profile-value">
+                <span class="ontop-profile-label">Summary</span>
+                <div class="ontop-profile-text">
+                    {profile.get('cod_contractor', 'N/A')}<br>
+                    {profile.get('des_residence_country') or 'No country'}<br>
+                    {profile.get('des_wallet_status') or 'No wallet status'}
+                </div>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
 with col1:
     st.markdown(
         f"""
         <div class="ontop-profile-card">
             <p class="ontop-kicker">Identity</p>
-            <h3>{profile.get('full_name', 'N/A')}</h3>
-            <p><strong>CR Code</strong><br><code>{profile['cod_contractor']}</code></p>
-            <p><strong>Email</strong><br>{profile.get('des_email') or 'N/A'}</p>
+            <div class="ontop-profile-value">
+                <span class="ontop-profile-label">CR Code</span>
+                <div class="ontop-profile-text"><code>{profile['cod_contractor']}</code></div>
+            </div>
+            <div class="ontop-profile-value">
+                <span class="ontop-profile-label">Email</span>
+                <div class="ontop-profile-text">{profile.get('des_email') or 'N/A'}</div>
+            </div>
         </div>
         """,
         unsafe_allow_html=True,
@@ -136,9 +156,14 @@ with col2:
         f"""
         <div class="ontop-profile-card">
             <p class="ontop-kicker">Location</p>
-            <h3>{profile.get('des_residence_country') or 'N/A'}</h3>
-            <p><strong>Country</strong><br>{profile.get('des_residence_country') or 'N/A'}</p>
-            <p><strong>City</strong><br>{profile.get('des_residence_city') or 'N/A'}</p>
+            <div class="ontop-profile-value">
+                <span class="ontop-profile-label">Country</span>
+                <div class="ontop-profile-strong">{profile.get('des_residence_country') or 'N/A'}</div>
+            </div>
+            <div class="ontop-profile-value">
+                <span class="ontop-profile-label">City</span>
+                <div class="ontop-profile-text">{profile.get('des_residence_city') or 'N/A'}</div>
+            </div>
         </div>
         """,
         unsafe_allow_html=True,
@@ -148,13 +173,19 @@ with col3:
     wallet_status = profile.get("des_wallet_status") or "N/A"
     balance = profile.get("amt_wallet_balance")
     balance_text = f"${balance:,.2f}" if balance is not None else "N/A"
+    wallet_tone = "green" if wallet_status.upper() == "ACTIVATED" else "gray"
     st.markdown(
         f"""
         <div class="ontop-profile-card">
             <p class="ontop-kicker">Wallet</p>
-            <h3>{wallet_status}</h3>
-            <p><strong>Status</strong><br>{wallet_status}</p>
-            <p><strong>Balance</strong><br>{balance_text}</p>
+            <div class="ontop-profile-value">
+                <span class="ontop-profile-label">Status</span>
+                <span class="ontop-status-badge ontop-status-{wallet_tone}">{wallet_status}</span>
+            </div>
+            <div class="ontop-profile-value">
+                <span class="ontop-profile-label">Balance</span>
+                <div class="ontop-profile-strong">{balance_text}</div>
+            </div>
         </div>
         """,
         unsafe_allow_html=True,
@@ -170,17 +201,6 @@ user_email = profile.get("des_email")
 eligibility = get_user_eligibility(selected_cr, user_email)
 num_eligible = count_eligible(selected_cr, eligibility)
 
-st.markdown(
-    f"""
-    <div class="ontop-inline-stat">
-        <span class="ontop-kicker">Eligibility Summary</span>
-        <strong>{num_eligible} product{'s' if num_eligible != 1 else ''} available</strong>
-        Review each product card below, confirm the lock state, and capture the opportunity if available.
-    </div>
-    """,
-    unsafe_allow_html=True,
-)
-
 cols = st.columns(len(PRODUCTS))
 
 for col, (key, product) in zip(cols, PRODUCTS.items()):
@@ -188,53 +208,104 @@ for col, (key, product) in zip(cols, PRODUCTS.items()):
     if not result:
         continue
 
-    with col:
-        if result.status == "ELIGIBLE":
-            st.success(f"**{product.name}**")
-            st.caption(product.description)
-            st.markdown(f"*{product.pitch}*")
+    status_html = ""
+    feedback_title = ""
+    feedback_body = ""
+    feedback_tone = "gray"
+    card_class = "ontop-product-card-coral"
+    lead_key = f"lead_{selected_cr}_{key}"
+    lock = None
+    recent_lead = None
 
-            lead_key = f"lead_{selected_cr}_{key}"
-            if st.session_state.get(lead_key):
-                st.info("Lead submitted!")
+    if result.status == "ELIGIBLE":
+        status_html = render_status_badge("Eligible", "green")
+        feedback_tone = "green"
+        feedback_title = "Opportunity open"
+        feedback_body = "No active lock found. Add context below and create the lead when ready."
+        card_class = "ontop-product-card-green"
+        if st.session_state.get(lead_key):
+            feedback_title = "Lead submitted"
+            feedback_body = "This opportunity is now in your pipeline and will show up in My Leads."
+        else:
+            recent_lead = get_recent_lead(selected_cr, key)
+            if recent_lead and recent_lead["status"] == "Converted":
+                status_html = render_status_badge("Converted", "purple")
+                feedback_tone = "purple"
+                feedback_title = "Recently converted"
+                feedback_body = f"Converted by {recent_lead['agent_name']}. This opportunity should remain closed."
+                card_class = "ontop-product-card-purple"
             else:
                 lock = check_opportunity_lock(selected_cr, key)
-                if lock:
-                    if lock["agent_email"] == st.session_state["agent_email"]:
-                        st.info("You already have an active lead for this product.")
-                    else:
-                        created = parse_supabase_timestamp(lock["created_at"])
-                        days_left = 60 - (datetime.now(timezone.utc) - created).days
-                        st.warning(
-                            f"Locked by **{lock['agent_name']}** — "
-                            f"available in ~{max(days_left, 1)} days"
-                        )
+            if lock:
+                created = parse_supabase_timestamp(lock["created_at"])
+                days_left = max(60 - (datetime.now(timezone.utc) - created).days, 1)
+                if lock["agent_email"] == st.session_state["agent_email"]:
+                    status_html = render_status_badge("Assigned", "purple")
+                    feedback_tone = "purple"
+                    feedback_title = "Already assigned to you"
+                    feedback_body = (
+                        f"You already have an active lead for this product. "
+                        f"It stays reserved for about {days_left} more day(s) unless you update it sooner in My Leads."
+                    )
+                    card_class = "ontop-product-card-purple"
                 else:
-                    with st.expander("Mark as Lead"):
-                        notes = st.text_area(
-                            "Notes (optional)",
-                            key=f"notes_{selected_cr}_{key}",
-                            placeholder="Any context about the interaction...",
-                        )
-                        if st.button("Submit Lead", key=f"btn_{selected_cr}_{key}", type="primary"):
-                            save_lead(
-                                cr_code=selected_cr,
-                                product=key,
-                                agent_name=st.session_state["agent_name"],
-                                notes=notes,
-                                agent_email=st.session_state["agent_email"],
-                            )
-                            st.session_state[lead_key] = True
-                            st.rerun()
+                    status_html = render_status_badge("Taken", "amber")
+                    feedback_tone = "amber"
+                    feedback_title = "Opportunity locked"
+                    feedback_body = f"Locked by {lock['agent_name']}. It should open again in about {days_left} day(s)."
+    elif result.status == "ALREADY_USING":
+        status_html = render_status_badge("Already using", "gray")
+        feedback_tone = "gray"
+        feedback_title = "Already active"
+        feedback_body = result.reason
+    else:
+        status_html = render_status_badge("Not eligible", "coral")
+        feedback_tone = "coral"
+        feedback_title = "Currently unavailable"
+        feedback_body = result.reason
 
-        elif result.status == "ALREADY_USING":
-            st.markdown(
-                f"""<div style="padding:1rem;border-radius:0.5rem;background-color:#374151;color:#9ca3af;">
-                <strong>{product.name}</strong><br>
-                <small>Already using this product</small></div>""",
-                unsafe_allow_html=True,
-            )
+    with col:
+        st.markdown(
+            f"""
+            <div class="ontop-product-card {card_class}">
+                <div>
+                    <h3>{product.name}</h3>
+                    <p class="ontop-product-desc">{product.description}</p>
+                </div>
+                <div>{status_html}</div>
+                <p class="ontop-product-pitch"><em>{product.pitch}</em></p>
+                <div class="ontop-product-footer ontop-product-state">
+                    <p><strong>{feedback_title}</strong></p>
+                    <p>{feedback_body}</p>
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
 
-        elif result.status == "NOT_ELIGIBLE":
-            st.error(f"**{product.name}**")
-            st.caption(result.reason)
+        if (
+            result.status == "ELIGIBLE"
+            and not st.session_state.get(lead_key)
+            and not lock
+            and not (recent_lead and recent_lead["status"] == "Converted")
+        ):
+            with st.expander(f"Mark {product.name} as Lead"):
+                notes = st.text_area(
+                    "Notes (optional)",
+                    key=f"notes_{selected_cr}_{key}",
+                    placeholder="Any context about the interaction...",
+                )
+                if st.button("Submit Lead", key=f"btn_{selected_cr}_{key}", type="primary"):
+                    save_lead(
+                        cr_code=selected_cr,
+                        product=key,
+                        agent_name=st.session_state["agent_name"],
+                        notes=notes,
+                        agent_email=st.session_state["agent_email"],
+                    )
+                    st.session_state[lead_key] = True
+                    st.session_state["lookup_feedback"] = f"{product.name} lead created for {selected_cr}."
+                    st.rerun()
+
+if st.session_state.get("lookup_feedback"):
+    st.toast(st.session_state.pop("lookup_feedback"))
