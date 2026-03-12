@@ -370,10 +370,10 @@ render_table(
             "agent_name": "Agent",
             "total": "Total Leads",
             "converted": "Converted",
-            "mrr_label": "MRR",
+            "mrr_label": "MRR Estimated",
             "conversion_rate_label": "Conversion %",
         }
-    )[["Agent", "Total Leads", "Converted", "MRR", "Conversion %"]].fillna("")
+    )[["Agent", "Total Leads", "Converted", "MRR Estimated", "Conversion %"]].fillna("")
 )
 close_shell()
 
