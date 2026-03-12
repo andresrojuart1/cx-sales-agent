@@ -8,10 +8,14 @@ from datetime import datetime, timezone
 import re
 
 from data.redshift import get_contractor_profile, search_contractors
-from data.supabase_client import check_opportunity_lock, get_recent_lead, save_lead
+from data import supabase_client
 from eligibility.engine import count_eligible, get_user_eligibility
 from eligibility.products import PRODUCTS
 from shared import render_sidebar
+
+check_opportunity_lock = supabase_client.check_opportunity_lock
+save_lead = supabase_client.save_lead
+get_recent_lead = getattr(supabase_client, "get_recent_lead", lambda *_args, **_kwargs: None)
 
 render_sidebar()
 
