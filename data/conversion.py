@@ -1,5 +1,7 @@
 """Automatic conversion detection — match active leads against Redshift transactions."""
 
+from __future__ import annotations
+
 from data.redshift import (
     get_esim_transactions,
     get_future_fund_transactions,

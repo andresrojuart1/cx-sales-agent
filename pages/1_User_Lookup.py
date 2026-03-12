@@ -5,6 +5,7 @@ import streamlit as st
 st.set_page_config(page_title="User Lookup", page_icon=":mag:", layout="wide")
 
 from datetime import datetime, timezone
+import re
 
 from data.redshift import get_contractor_profile, search_contractors
 from data.supabase_client import check_opportunity_lock, save_lead
@@ -14,11 +15,37 @@ from shared import render_sidebar
 
 render_sidebar()
 
-st.header("User Lookup")
+st.markdown(
+    """
+    <section class="ontop-hero">
+        <span class="ontop-eyebrow">User Lookup</span>
+        <h2>Find a contractor, validate eligibility, and turn intent into a qualified lead.</h2>
+        <p>Search by CR code, email, or name to review profile signals and product opportunities in one workflow.</p>
+    </section>
+    """,
+    unsafe_allow_html=True,
+)
+
+
+def parse_supabase_timestamp(raw_value: str) -> datetime:
+    """Normalize Supabase timestamps for Python 3.9's stricter parser."""
+    normalized = re.sub(r"\.(\d{1,5})([+-]\d{2}:\d{2})$", lambda m: f".{m.group(1).ljust(6, '0')}{m.group(2)}", raw_value)
+    return datetime.fromisoformat(normalized)
 
 # ---------------------------------------------------------------------------
 # Search
 # ---------------------------------------------------------------------------
+
+st.markdown(
+    """
+    <div class="ontop-subtle-card">
+        <p class="ontop-kicker">Search</p>
+        <h3 class="ontop-section-title">Locate a contractor</h3>
+        <p>Start with a CR code for the fastest match, or search by email or full name.</p>
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
 
 search_term = st.text_input(
     "Search by CR Code, email, or name",
@@ -78,29 +105,60 @@ if not profile:
 # ---------------------------------------------------------------------------
 
 st.divider()
-st.subheader(f"{profile.get('full_name', 'N/A')}")
+st.markdown(
+    f"""
+    <div class="ontop-subtle-card">
+        <p class="ontop-kicker">Contractor Profile</p>
+        <h3 class="ontop-section-title">{profile.get('full_name', 'N/A')}</h3>
+        <p>Reference profile details before you pitch products or create a lead.</p>
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
 
 col1, col2, col3 = st.columns(3)
 
 with col1:
-    st.markdown("**CR Code**")
-    st.code(profile["cod_contractor"])
-    st.markdown("**Email**")
-    st.text(profile.get("des_email") or "N/A")
+    st.markdown(
+        f"""
+        <div class="ontop-profile-card">
+            <p class="ontop-kicker">Identity</p>
+            <h3>{profile.get('full_name', 'N/A')}</h3>
+            <p><strong>CR Code</strong><br><code>{profile['cod_contractor']}</code></p>
+            <p><strong>Email</strong><br>{profile.get('des_email') or 'N/A'}</p>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
 with col2:
-    st.markdown("**Country**")
-    st.text(profile.get("des_residence_country") or "N/A")
-    st.markdown("**City**")
-    st.text(profile.get("des_residence_city") or "N/A")
+    st.markdown(
+        f"""
+        <div class="ontop-profile-card">
+            <p class="ontop-kicker">Location</p>
+            <h3>{profile.get('des_residence_country') or 'N/A'}</h3>
+            <p><strong>Country</strong><br>{profile.get('des_residence_country') or 'N/A'}</p>
+            <p><strong>City</strong><br>{profile.get('des_residence_city') or 'N/A'}</p>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
 with col3:
-    st.markdown("**Wallet Status**")
     wallet_status = profile.get("des_wallet_status") or "N/A"
-    st.text(wallet_status)
-    st.markdown("**Wallet Balance**")
     balance = profile.get("amt_wallet_balance")
-    st.text(f"${balance:,.2f}" if balance is not None else "N/A")
+    balance_text = f"${balance:,.2f}" if balance is not None else "N/A"
+    st.markdown(
+        f"""
+        <div class="ontop-profile-card">
+            <p class="ontop-kicker">Wallet</p>
+            <h3>{wallet_status}</h3>
+            <p><strong>Status</strong><br>{wallet_status}</p>
+            <p><strong>Balance</strong><br>{balance_text}</p>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
 # ---------------------------------------------------------------------------
 # Eligibility Cards
@@ -112,7 +170,16 @@ user_email = profile.get("des_email")
 eligibility = get_user_eligibility(selected_cr, user_email)
 num_eligible = count_eligible(selected_cr, eligibility)
 
-st.subheader(f"Product Eligibility ({num_eligible} product{'s' if num_eligible != 1 else ''} available)")
+st.markdown(
+    f"""
+    <div class="ontop-inline-stat">
+        <span class="ontop-kicker">Eligibility Summary</span>
+        <strong>{num_eligible} product{'s' if num_eligible != 1 else ''} available</strong>
+        Review each product card below, confirm the lock state, and capture the opportunity if available.
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
 
 cols = st.columns(len(PRODUCTS))
 
@@ -136,7 +203,7 @@ for col, (key, product) in zip(cols, PRODUCTS.items()):
                     if lock["agent_email"] == st.session_state["agent_email"]:
                         st.info("You already have an active lead for this product.")
                     else:
-                        created = datetime.fromisoformat(lock["created_at"])
+                        created = parse_supabase_timestamp(lock["created_at"])
                         days_left = 60 - (datetime.now(timezone.utc) - created).days
                         st.warning(
                             f"Locked by **{lock['agent_name']}** — "

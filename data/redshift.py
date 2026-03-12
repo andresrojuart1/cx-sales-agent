@@ -1,5 +1,7 @@
 """Redshift connection and cached query functions."""
 
+from __future__ import annotations
+
 import pandas as pd
 import psycopg2
 import streamlit as st

@@ -11,7 +11,31 @@ from shared import render_sidebar
 
 render_sidebar()
 
-st.header("My Leads")
+
+def open_table_shell():
+    st.markdown('<div class="ontop-table-shell">', unsafe_allow_html=True)
+
+
+def close_shell():
+    st.markdown("</div>", unsafe_allow_html=True)
+
+
+def render_table(df: pd.DataFrame):
+    st.markdown(
+        df.to_html(index=False, classes="ontop-html-table", border=0, escape=False),
+        unsafe_allow_html=True,
+    )
+
+st.markdown(
+    """
+    <section class="ontop-hero">
+        <span class="ontop-eyebrow">My Leads</span>
+        <h2>Track your active pipeline and update lead outcomes without losing context.</h2>
+        <p>Filter by product, status, and time period to review the opportunities currently assigned to you.</p>
+    </section>
+    """,
+    unsafe_allow_html=True,
+)
 
 agent_name = st.session_state["agent_name"]
 agent_email = st.session_state["agent_email"]
@@ -21,6 +45,17 @@ agent_email = st.session_state["agent_email"]
 # ---------------------------------------------------------------------------
 
 col1, col2, col3 = st.columns(3)
+
+st.markdown(
+    """
+    <div class="ontop-subtle-card">
+        <p class="ontop-kicker">Filters</p>
+        <h3 class="ontop-section-title">Refine your pipeline view</h3>
+        <p>Narrow the list to focus on the products and time ranges that need action.</p>
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
 
 with col1:
     product_filter = st.selectbox(
@@ -69,6 +104,17 @@ df["created"] = pd.to_datetime(df["created_at"]).dt.strftime("%Y-%m-%d %H:%M")
 # Summary
 # ---------------------------------------------------------------------------
 
+st.markdown(
+    """
+    <div class="ontop-subtle-card">
+        <p class="ontop-kicker">Summary</p>
+        <h3 class="ontop-section-title">Lead volume and status mix</h3>
+        <p>Use the metrics below to understand your current workload and recent movement.</p>
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
+
 st.metric("Total Leads", len(df))
 
 status_counts = df["status"].value_counts()
@@ -83,7 +129,16 @@ st.divider()
 # Leads table
 # ---------------------------------------------------------------------------
 
-st.subheader("Lead Details")
+st.markdown(
+    """
+    <div class="ontop-subtle-card">
+        <p class="ontop-kicker">Lead Details</p>
+        <h3 class="ontop-section-title">Review every lead in the current result set</h3>
+        <p>Check notes and current status before making updates.</p>
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
 
 display_df = df[["cr_code", "product_name", "status", "notes", "created"]].rename(
     columns={
@@ -95,14 +150,25 @@ display_df = df[["cr_code", "product_name", "status", "notes", "created"]].renam
     }
 )
 
-st.dataframe(display_df, use_container_width=True, hide_index=True)
+open_table_shell()
+render_table(display_df.fillna(""))
+close_shell()
 
 # ---------------------------------------------------------------------------
 # Status update
 # ---------------------------------------------------------------------------
 
 st.divider()
-st.subheader("Update Lead Status")
+st.markdown(
+    """
+    <div class="ontop-subtle-card">
+        <p class="ontop-kicker">Update Workflow</p>
+        <h3 class="ontop-section-title">Change the status of an existing lead</h3>
+        <p>Select the lead to update and apply the new outcome.</p>
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
 
 lead_options = {
     f"{row['cr_code']} — {PRODUCT_NAMES.get(row['product'], row['product'])} ({row['status']})": row["id"]

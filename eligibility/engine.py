@@ -1,5 +1,7 @@
 """Core eligibility logic — determines which products a user can be offered."""
 
+from __future__ import annotations
+
 from dataclasses import dataclass
 
 from data.redshift import (
