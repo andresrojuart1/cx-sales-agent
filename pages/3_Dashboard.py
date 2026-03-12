@@ -379,6 +379,7 @@ agent_display = agent_df[["cr_code", "product_name", "agent_name", "status", "no
     }
 )
 if is_lead_admin and not agent_df.empty:
+    selected_dashboard_delete_ids = set(st.session_state.get("dashboard_delete_ids", []))
     delete_df = agent_df[["id", "cr_code", "product_name", "agent_name", "status", "notes", "date"]].rename(
         columns={
             "id": "Lead ID",
@@ -390,7 +391,7 @@ if is_lead_admin and not agent_df.empty:
             "date": "Date",
         }
     ).copy()
-    delete_df.insert(0, "Delete", False)
+    delete_df.insert(0, "Delete", delete_df["Lead ID"].isin(selected_dashboard_delete_ids))
 
     open_shell("ontop-table-shell")
     edited_delete_df = st.data_editor(
@@ -411,6 +412,7 @@ if is_lead_admin and not agent_df.empty:
     close_shell()
 
     selected_delete_ids = edited_delete_df.loc[edited_delete_df["Delete"], "Lead ID"].tolist()
+    st.session_state["dashboard_delete_ids"] = selected_delete_ids
 
     admin_col1, admin_col2 = st.columns([3, 2])
     with admin_col1:
@@ -427,6 +429,7 @@ if is_lead_admin and not agent_df.empty:
             else:
                 for lead_id in selected_delete_ids:
                     delete_lead(lead_id)
+                st.session_state["dashboard_delete_ids"] = []
                 st.success(f"Deleted {len(selected_delete_ids)} lead(s).")
                 st.rerun()
 else:
