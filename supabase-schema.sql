@@ -45,6 +45,13 @@ CREATE TABLE public.quick_contract_events (
   created_at timestamp with time zone DEFAULT now(),
   CONSTRAINT quick_contract_events_pkey PRIMARY KEY (id)
 );
+-- NOTE: The live risk_matrix table has been redesigned into a wide risk-scoring
+-- table and no longer matches the DDL below. Key differences the app relies on:
+--   * the decision column is named "Decision" (capital D, case-sensitive),
+--     values 'Approved' / 'Not approved'
+--   * there is no `id` column
+--   * des_email still exists (values are uppercase; the app lower-cases them)
+-- The query lives in data/supabase_client.py:get_risk_matrix_rejected().
 CREATE TABLE public.risk_matrix (
   des_email text NOT NULL,
   decision text DEFAULT 'Null'::text CHECK (decision = ANY (ARRAY['Approved'::text, 'Not approved'::text])),

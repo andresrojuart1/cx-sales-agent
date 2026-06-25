@@ -11,7 +11,7 @@ try:
     from supabase import create_client
 
     client = create_client(os.environ["SUPABASE_URL"], os.environ["SUPABASE_KEY"])
-    result = client.table("risk_matrix").select("id, des_email, decision").limit(3).execute()
+    result = client.table("risk_matrix").select('des_email, "Decision"').limit(3).execute()
     print(f"  Connected. risk_matrix rows returned: {len(result.data)}")
     for row in result.data:
         print(f"    {row}")

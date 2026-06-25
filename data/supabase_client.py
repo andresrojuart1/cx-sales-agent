@@ -36,14 +36,22 @@ def get_ff_audience() -> set:
 
 @st.cache_data(ttl=3600, show_spinner="Loading risk matrix...")
 def get_risk_matrix_rejected() -> set:
-    """All des_email values where decision is 'Not approved'."""
+    """All des_email values where Decision is 'Not approved'.
+
+    Fails soft: if the risk_matrix query errors (e.g. schema drift), return an
+    empty set so eligibility falls back to treating users as not-rejected rather
+    than crashing the lookup page.
+    """
     client = get_client()
-    result = (
-        client.table("risk_matrix")
-        .select("des_email")
-        .eq("decision", "Not approved")
-        .execute()
-    )
+    try:
+        result = (
+            client.table("risk_matrix")
+            .select("des_email")
+            .eq("Decision", "Not approved")
+            .execute()
+        )
+    except Exception:
+        return set()
     return {row["des_email"].lower() for row in result.data if row["des_email"]}
 
 
