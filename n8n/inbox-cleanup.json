@@ -1,0 +1,399 @@
+{
+  "name": "Inbox Cleanup - Gmail",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## Limpieza y organizacion de bandeja\n**Objetivo:** ordenar el inbox automaticamente.\n- Copias Zendesk / fallos Apps Script / avisos Zoom -> **Papelera** (recuperable 30 dias)\n- Colaboracion -> se queda en inbox + estrella + label\n- Informativos -> label y fuera del inbox\n**Trigger:** Gmail Trigger cada 5 min. Prueba: boton 'Execute workflow' con un correo en inbox.",
+        "width": 420,
+        "height": 230,
+        "color": 4
+      },
+      "name": "Note - Overview",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        -260
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## Credenciales a configurar\n1. Gmail OAuth2 (PLACEHOLDER_GMAIL)\n2. Slack (PLACEHOLDER_SLACK) para #ops-alerts\n\n## IDs a reemplazar\n- PLACEHOLDER_LABEL_COLAB\n- PLACEHOLDER_LABEL_INFO\n(crea las labels en Gmail y copia sus IDs; ver 'How to use')",
+        "width": 360,
+        "height": 230,
+        "color": 3
+      },
+      "name": "Note - Credentials",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        460,
+        -260
+      ]
+    },
+    {
+      "parameters": {
+        "content": "Edita el objeto RULES arriba del codigo para agregar remitentes. Todo lo que no coincida se deja intacto (nunca se borra por defecto).",
+        "width": 320,
+        "height": 110,
+        "color": 5
+      },
+      "name": "Note - Classifier",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        300,
+        -30
+      ]
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyX",
+              "value": 5,
+              "unit": "minutes"
+            }
+          ]
+        },
+        "simple": true,
+        "filters": {
+          "labelIds": [
+            "INBOX"
+          ]
+        }
+      },
+      "name": "Get New Inbox Emails",
+      "type": "n8n-nodes-base.gmailTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        160
+      ],
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "PLACEHOLDER_GMAIL",
+          "name": "Gmail account"
+        }
+      },
+      "notes": "Ejemplo de salida: {id, threadId, From:'support@getontop.com', Subject:'[Ontop] Recall SWIFT...', labelIds:['INBOX','UNREAD']}"
+    },
+    {
+      "parameters": {
+        "jsCode": "// ===== REGLAS EDITABLES =====\nconst RULES = {\n  trashSenders:   ['support@getontop.com'],                       // copias de tickets Zendesk\n  trashScript:    { sender: 'noreply-apps-scripts-notifications@google.com', subject: /sync zendesk users/i },\n  trashZoom:      { sender: 'no-reply@zoom.us', subject: /(has joined your meeting|se ha unido a tu reuni)/i },\n  collabSenders:  ['drive-shares-dm-noreply@google.com', 'comments-noreply@docs.google.com', 'calendar-notification@google.com'],\n  infoSenders:    ['notifications@mail.granola.ai', 'events@send.zapier.com'],\n};\n// =============================\nconst out = [];\nfor (const item of $input.all()) {\n  const from = String(item.json.From || '').toLowerCase();\n  const subject = String(item.json.Subject || '');\n  const has = (list) => list.some(s => from.includes(s));\n  let category = 'none', reason = 'Sin regla: se deja en la bandeja';\n\n  if (has(RULES.trashSenders)) { category = 'trash'; reason = 'Copia de ticket Zendesk'; }\n  else if (from.includes(RULES.trashScript.sender) && RULES.trashScript.subject.test(subject)) { category = 'trash'; reason = 'Fallo Apps Script Sync Zendesk Users'; }\n  else if (from.includes(RULES.trashZoom.sender) && RULES.trashZoom.subject.test(subject)) { category = 'trash'; reason = 'Aviso Zoom: alguien se unio'; }\n  else if (has(RULES.collabSenders)) { category = 'collab'; reason = 'Colaboracion'; }\n  else if (has(RULES.infoSenders)) { category = 'info'; reason = 'Informativo / baja prioridad'; }\n\n  out.push({ json: { ...item.json, category, reason } });\n}\nreturn out;"
+      },
+      "name": "Transform Classify Email",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        260,
+        160
+      ]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "id": "trash",
+                    "leftValue": "={{ $json.category }}",
+                    "rightValue": "trash",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Trash"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "id": "collab",
+                    "leftValue": "={{ $json.category }}",
+                    "rightValue": "collab",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Collab"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "id": "info",
+                    "leftValue": "={{ $json.category }}",
+                    "rightValue": "info",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Info"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Filter Route By Category",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        520,
+        160
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "thread",
+        "operation": "trash",
+        "threadId": "={{ $json.threadId }}"
+      },
+      "name": "Delete Trash Thread",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        800,
+        40
+      ],
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "PLACEHOLDER_GMAIL",
+          "name": "Gmail account"
+        }
+      },
+      "continueOnFail": false
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "addLabels",
+        "messageId": "={{ $json.id }}",
+        "labelIds": [
+          "PLACEHOLDER_LABEL_COLAB",
+          "STARRED"
+        ]
+      },
+      "name": "Update Label Collaboration",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        800,
+        200
+      ],
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "PLACEHOLDER_GMAIL",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "addLabels",
+        "messageId": "={{ $json.id }}",
+        "labelIds": [
+          "PLACEHOLDER_LABEL_INFO"
+        ]
+      },
+      "name": "Update Label Informational",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        800,
+        360
+      ],
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "PLACEHOLDER_GMAIL",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "removeLabels",
+        "messageId": "={{ $json.id }}",
+        "labelIds": [
+          "INBOX"
+        ]
+      },
+      "name": "Update Archive Informational",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1060,
+        360
+      ],
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "PLACEHOLDER_GMAIL",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## Manejo de errores\nCualquier fallo del workflow dispara el Error Trigger y avisa a #ops-alerts. Configura este workflow como 'Error Workflow' de si mismo en Settings.",
+        "width": 360,
+        "height": 130,
+        "color": 2
+      },
+      "name": "Note - Errors",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        520
+      ]
+    },
+    {
+      "parameters": {},
+      "name": "Get Workflow Error",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        700
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "post",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "mode": "name",
+          "value": "#ops-alerts"
+        },
+        "text": "=:warning: Fallo en *Inbox Cleanup*: {{ $json.execution.error.message }}\nNodo: {{ $json.execution.lastNodeExecuted }}\n{{ $json.execution.url }}",
+        "otherOptions": {}
+      },
+      "name": "Send Slack Alert",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.3,
+      "position": [
+        260,
+        700
+      ],
+      "credentials": {
+        "slackApi": {
+          "id": "PLACEHOLDER_SLACK",
+          "name": "Slack account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Get New Inbox Emails": {
+      "main": [
+        [
+          {
+            "node": "Transform Classify Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Transform Classify Email": {
+      "main": [
+        [
+          {
+            "node": "Filter Route By Category",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter Route By Category": {
+      "main": [
+        [
+          {
+            "node": "Delete Trash Thread",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Update Label Collaboration",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Update Label Informational",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Label Informational": {
+      "main": [
+        [
+          {
+            "node": "Update Archive Informational",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Workflow Error": {
+      "main": [
+        [
+          {
+            "node": "Send Slack Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "tags": []
+}
