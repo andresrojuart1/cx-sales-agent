@@ -1,0 +1,337 @@
+{
+  "name": "Inbox Cleanup - One-time backlog",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## Limpieza unica del inbox actual\nEjecucion MANUAL, una sola vez. Mismo clasificador que 'Inbox Cleanup - Gmail'.\n1. Corre con DRY_RUN=true: revisa la salida de 'Transform Classify Email' (campos intended y reason). No se modifica nada.\n2. Si todo esta bien, cambia DRY_RUN a false y ejecuta de nuevo.\nLo trasheado va a Papelera (recuperable 30 dias).",
+        "width": 460,
+        "height": 230,
+        "color": 4
+      },
+      "name": "Note - Overview",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        -260
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## Credenciales / IDs\n- Gmail OAuth2 (PLACEHOLDER_GMAIL)\n- PLACEHOLDER_LABEL_COLAB\n- PLACEHOLDER_LABEL_INFO\nAjusta el limite de correos en 'Get Inbox Emails' (500 por defecto).",
+        "width": 360,
+        "height": 230,
+        "color": 3
+      },
+      "name": "Note - Credentials",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        500,
+        -260
+      ]
+    },
+    {
+      "parameters": {},
+      "name": "Run Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        160
+      ],
+      "notes": "Ejemplo de entrada: ninguna. Pulsa 'Execute workflow'."
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "getAll",
+        "returnAll": false,
+        "limit": 500,
+        "simple": true,
+        "filters": {
+          "labelIds": [
+            "INBOX"
+          ]
+        }
+      },
+      "name": "Get Inbox Emails",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        240,
+        160
+      ],
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "PLACEHOLDER_GMAIL",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// ===== REGLAS EDITABLES =====\nconst RULES = {\n  trashSenders:   ['support@getontop.com'],                       // copias de tickets Zendesk\n  trashScript:    { sender: 'noreply-apps-scripts-notifications@google.com', subject: /sync zendesk users/i },\n  trashZoom:      { sender: 'no-reply@zoom.us', subject: /(has joined your meeting|se ha unido a tu reuni)/i },\n  collabSenders:  ['drive-shares-dm-noreply@google.com', 'comments-noreply@docs.google.com', 'calendar-notification@google.com'],\n  infoSenders:    ['notifications@mail.granola.ai', 'events@send.zapier.com'],\n};\nconst DRY_RUN = true;   // true = solo clasifica (no actua). Cambia a false para ejecutar de verdad.\nconst seen = new Set();\n// =============================\nconst out = [];\nfor (const item of $input.all()) {\n  const from = String(item.json.From || '').toLowerCase();\n  const subject = String(item.json.Subject || '');\n  const has = (list) => list.some(s => from.includes(s));\n  let category = 'none', reason = 'Sin regla: se deja en la bandeja';\n\n  if (has(RULES.trashSenders)) { category = 'trash'; reason = 'Copia de ticket Zendesk'; }\n  else if (from.includes(RULES.trashScript.sender) && RULES.trashScript.subject.test(subject)) { category = 'trash'; reason = 'Fallo Apps Script Sync Zendesk Users'; }\n  else if (from.includes(RULES.trashZoom.sender) && RULES.trashZoom.subject.test(subject)) { category = 'trash'; reason = 'Aviso Zoom: alguien se unio'; }\n  else if (has(RULES.collabSenders)) { category = 'collab'; reason = 'Colaboracion'; }\n  else if (has(RULES.infoSenders)) { category = 'info'; reason = 'Informativo / baja prioridad'; }\n\n  // un solo item por hilo para no trashear dos veces\n  if (category !== 'none') { if (seen.has(item.json.threadId)) continue; seen.add(item.json.threadId); }\n  const intended = category;\n  if (DRY_RUN && category !== 'none') category = 'dry-run';\n  out.push({ json: { ...item.json, category, intended, reason, dryRun: DRY_RUN } });\n}\nreturn out;"
+      },
+      "name": "Transform Classify Email",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        500,
+        160
+      ]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "id": "trash",
+                    "leftValue": "={{ $json.category }}",
+                    "rightValue": "trash",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Trash"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "id": "collab",
+                    "leftValue": "={{ $json.category }}",
+                    "rightValue": "collab",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Collab"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "id": "info",
+                    "leftValue": "={{ $json.category }}",
+                    "rightValue": "info",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Info"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Filter Route By Category",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        760,
+        160
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "thread",
+        "operation": "trash",
+        "threadId": "={{ $json.threadId }}"
+      },
+      "name": "Delete Trash Thread",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1040,
+        40
+      ],
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "PLACEHOLDER_GMAIL",
+          "name": "Gmail account"
+        }
+      },
+      "continueOnFail": false
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "addLabels",
+        "messageId": "={{ $json.id }}",
+        "labelIds": [
+          "PLACEHOLDER_LABEL_COLAB",
+          "STARRED"
+        ]
+      },
+      "name": "Update Label Collaboration",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1040,
+        200
+      ],
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "PLACEHOLDER_GMAIL",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "addLabels",
+        "messageId": "={{ $json.id }}",
+        "labelIds": [
+          "PLACEHOLDER_LABEL_INFO"
+        ]
+      },
+      "name": "Update Label Informational",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1040,
+        360
+      ],
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "PLACEHOLDER_GMAIL",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "removeLabels",
+        "messageId": "={{ $json.id }}",
+        "labelIds": [
+          "INBOX"
+        ]
+      },
+      "name": "Update Archive Informational",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1300,
+        360
+      ],
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "PLACEHOLDER_GMAIL",
+          "name": "Gmail account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Run Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get Inbox Emails",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Inbox Emails": {
+      "main": [
+        [
+          {
+            "node": "Transform Classify Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Transform Classify Email": {
+      "main": [
+        [
+          {
+            "node": "Filter Route By Category",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter Route By Category": {
+      "main": [
+        [
+          {
+            "node": "Delete Trash Thread",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Update Label Collaboration",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Update Label Informational",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Label Informational": {
+      "main": [
+        [
+          {
+            "node": "Update Archive Informational",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "tags": []
+}
