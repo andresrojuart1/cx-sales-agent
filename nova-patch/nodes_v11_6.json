@@ -1,0 +1,77 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "method": "PUT",
+        "url": "=https://getontop.zendesk.com/api/v2/tickets/{{ $('Build Zendesk Update').item.json.ticket_id }}.json",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "zendeskApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($('Build Zendesk Update').item.json.placeholder) }}",
+        "options": {}
+      },
+      "id": "a7c1e0b2-5d3f-4c8e-9a61-2f4b8d0e6c11",
+      "name": "Retry 3 (Client placeholders)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [60352, 19664],
+      "credentials": {
+        "zendeskApi": {
+          "id": "VmW979VdDHSmLoVJ",
+          "name": "Mike Zendesk"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "={{ (() => { const tk = $('Loop Over Tickets').item.json || {}; const n = (tk.tags || []).filter(x => /^nova_try_/.test(x)).length + 1; return JSON.stringify({ ticket_id: tk.ticket_id, tags: n >= 3 ? ['nova_try_' + n, 'nova_routing_failed'] : ['nova_try_' + n] }); })() }}",
+        "options": {}
+      },
+      "id": "b8d2f1c3-6e4a-4d9f-8b72-3a5c9e1f7d22",
+      "name": "Next Attempt Tag",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [59904, 19808]
+    },
+    {
+      "parameters": {
+        "method": "PUT",
+        "url": "=https://getontop.zendesk.com/api/v2/tickets/{{ $json.ticket_id }}/tags.json",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "zendeskApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ tags: $json.tags }) }}",
+        "options": {}
+      },
+      "id": "c9e3a2d4-7f5b-4ea0-9c83-4b6d0f2a8e33",
+      "name": "Add Attempt Tag",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [60128, 19808],
+      "credentials": {
+        "zendeskApi": {
+          "id": "VmW979VdDHSmLoVJ",
+          "name": "Mike Zendesk"
+        }
+      },
+      "onError": "continueRegularOutput"
+    }
+  ],
+  "connections": {
+    "Next Attempt Tag": {
+      "main": [
+        [
+          {
+            "node": "Add Attempt Tag",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}
