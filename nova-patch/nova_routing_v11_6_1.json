@@ -2,49 +2,49 @@
   "nodes": [
     {
       "parameters": {
-        "content": "## 🤖 Nova · Domain routing agent v11.6.1 (every 5 min)\n\n**Goal:** every ticket in **Worker Support** and **Company Support** ends with its real category (Zendesk directory) and its **domain owner** (CX Kickoff · Domains). Generic categories (*Worker General Info*, *General questions*) never stay parked.\n\n**Trigger:** Schedule, every 5 minutes. **AI:** one *AI Agent* (Claude) per ticket. **Writes:** category + type of request + assignee (+ Company Support group for clients) + 1 internal note + routing tags. Never status, public replies or merges.\n\n**v8–v10:** conversation log, failed-write tag + Slack, urgent DM to owner, WS+CS only, live category list, same-issue duplicates → same agent, decision log, pattern alerts.\n\n**v11 (Nov 17):**\n• **Aura chat history** tool (audits → ChatStartedEvent.history): the pre-handoff conversation with Aura lives there, not in comments/conversation log. Low-context only if comments, conversation log AND chat history are empty.\n• **Low-context → Cristian** (general questions), clients → Miguel. **No more Samuel by default.**\n• **Generic-category sweep** (re-route mode): each run also picks up to 3 tickets ≥30 min old still in *Worker General Info* / *General questions*, unassigned / with Samuel / with an OOO agent, without `nova_reasignado` → re-reads them and reassigns to the real owner. Tag `nova_reasignado` (once). Keep a ticket with its owner: tag `nova_keep_owner`.\n• **OOO coverage:** owners with `agent_ooo=true` are covered (Sudu→Justin, Brisa→Cristian, …).\n• **Payflow retry:** if Zendesk rejects the update (*Payflow needed*), retry with Payflow = n/a before falling back to owner-only — so the category is not lost.\n• **v11.3:** smaller search pages (50 new / 25 sweep) + a *Slim* node after each search that keeps only ~10 fields per ticket, so *Filter & Prioritize* doesn't stall the task runner.\n• **v11.4 · Category-only mode:** generic-category tickets that already have a real owner (or were kept with their owner) → Nova re-reads them and sets the specific category + note; the **assignee is not changed** (a domain mismatch is only flagged in the note). Max 3 per run, tag `nova_categorized` (once). Follow-ups (`nova_followup_entrega`) are skipped.\n• **v11.3:** searches run in parallel → *Merge Queues* → *Filter* reads only its own input (no `$()` lookups in Code nodes, which pulled the whole execution into the task runner).\n• **Messaging channels:** internal note says how to reply. Public comments via Ticket API do NOT reach WhatsApp/chat customers → reply from Agent Workspace (or Sunshine API). WhatsApp 24h window closed → send template `reactivar_conversacion` (es/en) first; reply after the customer answers.\n\n**v11.6:** 4th write attempt with client placeholders (POR IDENTIFICAR / Colombia) before `nova_routing_failed`; new tickets processed oldest-first; tickets without an agent decision get `nova_try_N` and stop after 3.\n\n**v11.6.1:** manual out-of-office list in *Prepare Lookups* (`MANUAL_OOO`), because Zendesk's users API doesn't expose `agent_ooo`. Today: Sudu → covered by Justin.",
+        "content": "## 🤖 Nova · Domain routing agent v11.6.1 (every 5 min)\n\n**Goal:** every ticket in **Worker Support** and **Company Support** ends with its real category (Zendesk directory) and its **domain owner** (CX Kickoff · Domains). Generic categories (*Worker General Info*, *General questions*, *Client General Info*) never stay parked.\n\n**Trigger:** Schedule, every 5 minutes. **AI:** one *AI Agent* (Claude) per ticket. **Writes:** category + type of request + assignee (+ Company Support group for clients) + 1 internal note + routing tags. Never status, public replies or merges.\n\n**v8–v10:** conversation log, failed-write tag + Slack, urgent DM to owner, WS+CS only, live category list, same-issue duplicates → same agent, decision log, pattern alerts.\n\n**v11 (Nov 17):**\n• **Aura chat history** tool (audits → ChatStartedEvent.history): the pre-handoff conversation with Aura lives there, not in comments/conversation log. Low-context only if comments, conversation log AND chat history are empty.\n• **Low-context → Cristian** (general questions), clients → Miguel. **No more Samuel by default.**\n• **Generic-category sweep** (re-route mode): each run also picks up to 3 tickets ≥30 min old still in *Worker General Info* / *General questions*, unassigned / with Samuel / with an OOO agent, without `nova_reasignado` → re-reads them and reassigns to the real owner. Tag `nova_reasignado` (once). Keep a ticket with its owner: tag `nova_keep_owner`.\n• **OOO coverage (v11.6.1):** MANUAL list `MANUAL_OOO` in *Prepare Lookups* (Zendesk's API doesn't expose `agent_ooo`, and agents toggling OOO at night must not lose tickets). Covered owners' NEW tickets go to the cover (Sudu→Justin, Brisa→Cristian, …); existing tickets are never moved.\n• **Payflow retry:** if Zendesk rejects the update (*Payflow needed*), retry with Payflow = n/a before falling back to owner-only — so the category is not lost.\n• **v11.3:** smaller search pages (50 new / 25 sweep) + a *Slim* node after each search that keeps only ~10 fields per ticket, so *Filter & Prioritize* doesn't stall the task runner.\n• **v11.4 · Category-only mode:** generic-category tickets that already have a real owner (or were kept with their owner) → Nova re-reads them and sets the specific category + note; the **assignee is not changed** (a domain mismatch is only flagged in the note). Max 3 per run, tag `nova_categorized` (once). Follow-ups (`nova_followup_entrega`) are skipped.\n• **v11.3:** searches run in parallel → *Merge Queues* → *Filter* reads only its own input (no `$()` lookups in Code nodes, which pulled the whole execution into the task runner).\n• **Messaging channels:** internal note says how to reply. Public comments via Ticket API do NOT reach WhatsApp/chat customers → reply from Agent Workspace (or Sunshine API). WhatsApp 24h window closed → send template `reactivar_conversacion` (es/en) first; reply after the customer answers.\n\n**v11.6:** 4th write attempt with client placeholders (POR IDENTIFICAR / Colombia) before `nova_routing_failed`; new tickets processed oldest-first; tickets without an agent decision get `nova_try_N` and stop after 3.\n\n**v11.6.1:** manual out-of-office list (today: Sudu → Justin); the generic sweep now also covers *Client General Info* (Company Support tickets parked there were never re-checked); note header shows the real version.",
         "height": 520,
         "width": 560,
         "color": 4
       },
-      "id": "005d8081-af0d-4cf9-b4ae-3d5cdd26a23a",
+      "id": "129a39b4-d156-41de-8a2a-22674f23dae0",
       "name": "Note · Overview",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        57232,
-        18160
+        61280,
+        19744
       ]
     },
     {
       "parameters": {
-        "content": "## 🔑 Configure before running\n1. **Zendesk API** (`zendeskApi`) – subdomain `getontop`, email + API token of the Nova/API user.\n2. **Anthropic** – API key (model claude-sonnet-5, thinking OFF, no temperature).\n3. **Google Sheets OAuth** – read access to the category directory sheet.\n4. **Onsight MCP** – endpoint URL + bearer token in *Onsight (MCP)* node.\n5. **Slack** – bot token (needs `chat:write` + `im:write` to DM owners); channel for alerts (default `#cx-nova-alerts`, change in the Slack nodes).\n6. **Log sheet** – Hallazgos sheet, tab *Ruteo Nova* (already set; Google account needs edit access).\n7. **Agent availability** – the Zendesk user needs read access to agents (users/show_many) for `agent_ooo`.",
+        "content": "## 🔑 Configure before running\n1. **Zendesk API** (`zendeskApi`) – subdomain `getontop`, email + API token of the Nova/API user.\n2. **Anthropic** – API key (model claude-sonnet-5, thinking OFF, no temperature).\n3. **Google Sheets OAuth** – read access to the category directory sheet.\n4. **Onsight MCP** – endpoint URL + bearer token in *Onsight (MCP)* node.\n5. **Slack** – bot token (needs `chat:write` + `im:write` to DM owners); channel for alerts (default `#cx-nova-alerts`, change in the Slack nodes).\n6. **Log sheet** – Hallazgos sheet, tab *Ruteo Nova* (already set; Google account needs edit access).\n7. **Agent availability** – users/show_many is only used for suspended/inactive agents. Out of office is the manual `MANUAL_OOO` list in *Prepare Lookups*.",
         "height": 300,
         "width": 560,
         "color": 3
       },
-      "id": "c04a6ea5-3b88-4428-b989-00e1d7b96669",
+      "id": "0d13cbd6-1dc0-4905-a919-73fd4b84bb3b",
       "name": "Note · Credentials",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        57232,
-        18736
+        61280,
+        20320
       ]
     },
     {
       "parameters": {
-        "content": "### 1 · Fetch\nLoads category options + **agent availability (OOO)**. Then: (a) **new** = unassigned new/open tickets in Worker Support / Company Support (max 5 per run); (b) **sweep / re-route** = tickets still in a generic category (*Worker General Info*, *General questions*), ≥30 min old, unassigned / with Samuel / with an OOO agent, without `nova_reasignado` / `nova_keep_owner` (max 3 per run); (c) **category only** = generic-category tickets already with a real owner → category + note, assignee unchanged (max 3 per run, tag `nova_categorized`). Empty Aura handoffs younger than 10 min wait for the next run.",
+        "content": "### 1 · Fetch\nLoads category options + **agent availability (OOO)**. Then: (a) **new** = unassigned new/open tickets in Worker Support / Company Support (max 5 per run); (b) **sweep / re-route** = tickets still in a generic category (*Worker General Info*, *General questions*, *Client General Info*), ≥30 min old, unassigned / with Samuel / with an OOO agent, without `nova_reasignado` / `nova_keep_owner` (max 3 per run); (c) **category only** = generic-category tickets already with a real owner → category + note, assignee unchanged (max 3 per run, tag `nova_categorized`). Empty Aura handoffs younger than 10 min wait for the next run.",
         "height": 220,
         "width": 760
       },
-      "id": "b4ec7340-97f6-41ef-9ae4-c110525466f6",
+      "id": "3a869ce7-57a2-41df-bf27-bacf8c3e1a57",
       "name": "Note · Fetch",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        57792,
-        18320
+        61840,
+        19904
       ]
     },
     {
@@ -53,13 +53,13 @@
         "height": 180,
         "width": 520
       },
-      "id": "c6f8adb4-ddfb-40f4-b86f-0010d88854b8",
+      "id": "e738b898-3747-4e3a-ad19-c9cf8eb4c9cb",
       "name": "Note · Agent",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        58880,
-        18256
+        62928,
+        19840
       ]
     },
     {
@@ -68,13 +68,13 @@
         "height": 260,
         "width": 900
       },
-      "id": "3514e159-daaf-48a1-9e83-eb50d389802c",
+      "id": "e2a311a8-7a6f-444c-9840-060e4a4c53a7",
       "name": "Note · Write",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        59456,
-        18288
+        63504,
+        19872
       ]
     },
     {
@@ -87,13 +87,13 @@
           ]
         }
       },
-      "id": "e8b0659a-c9f4-481a-b193-6c0855de3f35",
+      "id": "e34bd687-a973-4ba8-bc48-d7db8e2cc36f",
       "name": "Every 5 Minutes",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.2,
       "position": [
-        57600,
-        18672
+        61648,
+        20256
       ]
     },
     {
@@ -103,13 +103,13 @@
         "nodeCredentialType": "zendeskApi",
         "options": {}
       },
-      "id": "48004821-4f9a-4729-abef-e2e25ffbde62",
+      "id": "f9b2826c-d001-4be6-9ee0-be200e02e852",
       "name": "Get Category Options",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        57792,
-        18672
+        61840,
+        20256
       ],
       "retryOnFail": true,
       "maxTries": 3,
@@ -137,13 +137,13 @@
         },
         "options": {}
       },
-      "id": "7bbb03bf-1bd2-4ba2-9483-5b0e518fa894",
+      "id": "260b9558-d714-4d39-a954-ac9d98a4d6d6",
       "name": "Get Agent Availability",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        57792,
-        18880
+        61840,
+        20464
       ],
       "retryOnFail": true,
       "maxTries": 3,
@@ -184,13 +184,13 @@
         },
         "options": {}
       },
-      "id": "14df4f23-96e5-4496-b512-9331a0e5de57",
+      "id": "b6115612-386d-46de-b666-d3ab8d6d06b2",
       "name": "Search Unassigned Worker Support",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        58192,
-        18672
+        62240,
+        20256
       ],
       "retryOnFail": true,
       "maxTries": 3,
@@ -230,13 +230,13 @@
         },
         "options": {}
       },
-      "id": "84506cfa-eeaf-408e-9ecd-1c226e141c3c",
+      "id": "fc3bc40e-f790-4480-8232-4ebe777fc45a",
       "name": "Search Unassigned Company Support",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        58192,
-        18880
+        62240,
+        20464
       ],
       "retryOnFail": true,
       "maxTries": 3,
@@ -276,13 +276,13 @@
         },
         "options": {}
       },
-      "id": "3e537509-b95d-4ed4-9e37-98df1a8eddc4",
+      "id": "c8db7a48-2a53-443a-80ad-7ed9e471fab0",
       "name": "Search Generic: Worker General Info",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        58192,
-        19088
+        62240,
+        20672
       ],
       "retryOnFail": true,
       "maxTries": 3,
@@ -323,13 +323,13 @@
         },
         "options": {}
       },
-      "id": "a1eb2fe2-8da6-4fee-8fe1-829138b4d82f",
+      "id": "4c70e5f4-52fd-45f4-af5c-1276bba1da33",
       "name": "Search Generic: General Questions",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        58192,
-        19296
+        62240,
+        20880
       ],
       "retryOnFail": true,
       "maxTries": 3,
@@ -346,104 +346,104 @@
       "parameters": {
         "jsCode": "// v11.3: keep only the fields Filter & Prioritize needs (Zendesk tickets carry ~300 custom fields twice;\n// passing 4 full search results into one Code node stalled the task runner).\nconst CAT = 22865771347348;\nconst results = ($input.first()?.json?.results) || [];\n// (v11.3) tagged with its source so Filter can read everything from ONE Merge input, without $() lookups\nconst slim = results.map(t => ({\n  id: t.id, subject: t.subject, group_id: t.group_id, status: t.status, requester_id: t.requester_id,\n  created_at: t.created_at, assignee_id: t.assignee_id || null, description: String(t.description || '').slice(0, 200),\n  channel: t.via?.channel || null, tags: t.tags || [],\n  category: ((t.custom_fields || []).find(f => f.id === CAT) || {}).value || null,\n}));\nreturn [{ json: { source: 'new_ws', results: slim, count: slim.length } }];"
       },
-      "id": "45e0d21a-65db-45fe-9058-d4f3443f12bf",
+      "id": "db7e7e6f-2262-4c93-8087-ee4aa44e7759",
       "name": "Slim · Unassigned WS",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        58304,
-        18768
+        62352,
+        20352
       ]
     },
     {
       "parameters": {
         "jsCode": "// v11.3: keep only the fields Filter & Prioritize needs (Zendesk tickets carry ~300 custom fields twice;\n// passing 4 full search results into one Code node stalled the task runner).\nconst CAT = 22865771347348;\nconst results = ($input.first()?.json?.results) || [];\n// (v11.3) tagged with its source so Filter can read everything from ONE Merge input, without $() lookups\nconst slim = results.map(t => ({\n  id: t.id, subject: t.subject, group_id: t.group_id, status: t.status, requester_id: t.requester_id,\n  created_at: t.created_at, assignee_id: t.assignee_id || null, description: String(t.description || '').slice(0, 200),\n  channel: t.via?.channel || null, tags: t.tags || [],\n  category: ((t.custom_fields || []).find(f => f.id === CAT) || {}).value || null,\n}));\nreturn [{ json: { source: 'new_cs', results: slim, count: slim.length } }];"
       },
-      "id": "c58c1fcb-6303-47a3-a776-80e37a581fef",
+      "id": "bce2e973-8a9a-418a-8e33-cee38e6ac3fd",
       "name": "Slim · Unassigned CS",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        58304,
-        18976
+        62352,
+        20560
       ]
     },
     {
       "parameters": {
         "jsCode": "// v11.3: keep only the fields Filter & Prioritize needs (Zendesk tickets carry ~300 custom fields twice;\n// passing 4 full search results into one Code node stalled the task runner).\nconst CAT = 22865771347348;\nconst results = ($input.first()?.json?.results) || [];\n// (v11.3) tagged with its source so Filter can read everything from ONE Merge input, without $() lookups\nconst slim = results.map(t => ({\n  id: t.id, subject: t.subject, group_id: t.group_id, status: t.status, requester_id: t.requester_id,\n  created_at: t.created_at, assignee_id: t.assignee_id || null, description: String(t.description || '').slice(0, 200),\n  channel: t.via?.channel || null, tags: t.tags || [],\n  category: ((t.custom_fields || []).find(f => f.id === CAT) || {}).value || null,\n}));\nreturn [{ json: { source: 'gen_wgi', results: slim, count: slim.length } }];"
       },
-      "id": "6627ae27-e5e3-417f-ba2f-63d2bc12b03b",
+      "id": "e3136421-a595-49f7-82b0-149d69b46078",
       "name": "Slim · Generic WGI",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        58304,
-        19184
+        62352,
+        20768
       ]
     },
     {
       "parameters": {
         "jsCode": "// v11.3: keep only the fields Filter & Prioritize needs (Zendesk tickets carry ~300 custom fields twice;\n// passing 4 full search results into one Code node stalled the task runner).\nconst CAT = 22865771347348;\nconst results = ($input.first()?.json?.results) || [];\n// (v11.3) tagged with its source so Filter can read everything from ONE Merge input, without $() lookups\nconst slim = results.map(t => ({\n  id: t.id, subject: t.subject, group_id: t.group_id, status: t.status, requester_id: t.requester_id,\n  created_at: t.created_at, assignee_id: t.assignee_id || null, description: String(t.description || '').slice(0, 200),\n  channel: t.via?.channel || null, tags: t.tags || [],\n  category: ((t.custom_fields || []).find(f => f.id === CAT) || {}).value || null,\n}));\nreturn [{ json: { source: 'gen_gq', results: slim, count: slim.length } }];"
       },
-      "id": "b139c28a-cecb-4e98-b39f-8eac70739f81",
+      "id": "f9669992-1bd9-4f5a-a02a-2d04e3aee20d",
       "name": "Slim · Generic GQ",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        58304,
-        19392
+        62352,
+        20976
       ]
     },
     {
       "parameters": {
-        "numberInputs": 5
+        "numberInputs": 6
       },
-      "id": "e599eb01-ce79-4ff9-9f65-142752246f04",
+      "id": "f7126acc-3234-4570-8c4a-5356301d1499",
       "name": "Merge Queues",
       "type": "n8n-nodes-base.merge",
       "typeVersion": 3,
       "position": [
-        58496,
-        18992
+        62544,
+        20576
       ]
     },
     {
       "parameters": {
-        "jsCode": "// Valid category options straight from Zendesk (source of truth, the Sheets directory can be outdated)\nconst opts = $('Get Category Options').first().json.ticket_field?.custom_field_options || [];\nconst tags = opts.map(o => o.value);\n// Catalog for the agent prompt: \"Name → tag\" (internal categories left out, they are never customer tickets)\nconst catalog = opts.filter(o => !/^Internal::/i.test(o.name)).map(o => o.name + ' → ' + o.value).join('\\n');\n// Agent availability (v11): owners with agent_ooo=true (or suspended/inactive) get covered in Build Zendesk Update\nconst KEYS = { justin: 54788295418644, sudu: 24567978777492, jaime: 55350915332244, caro: 32288140085012, cristian: 48493524357268, brisa: 47071350698516, miguel: 28269839522452, samuel: 40230868739348, mike: 42677627758740 };\nlet users = [];\ntry { users = $('Get Agent Availability').first().json.users || []; } catch (e) { users = []; }\n// v11.6.1: the Zendesk users API does not return agent_ooo, so OOO was never detected. Manual list: add/remove keys here.\nconst MANUAL_OOO = ['sudu'];\nconst ooo_ids = [...new Set(users.filter(u => u.agent_ooo === true || u.suspended === true || u.active === false).map(u => u.id).concat(MANUAL_OOO.map(k => KEYS[k]).filter(Boolean)))];\nconst ooo = Object.keys(KEYS).filter(k => ooo_ids.includes(KEYS[k]));\nreturn [{ json: { source: 'lookups', tags, catalog, ooo, ooo_ids, availability_loaded: users.length > 0 } }];"
+        "jsCode": "// Valid category options straight from Zendesk (source of truth, the Sheets directory can be outdated)\nconst opts = $('Get Category Options').first().json.ticket_field?.custom_field_options || [];\nconst tags = opts.map(o => o.value);\n// Catalog for the agent prompt: \"Name → tag\" (internal categories left out, they are never customer tickets)\nconst catalog = opts.filter(o => !/^Internal::/i.test(o.name)).map(o => o.name + ' → ' + o.value).join('\\n');\n// Agent availability (v11): owners with agent_ooo=true (or suspended/inactive) get covered in Build Zendesk Update\nconst KEYS = { justin: 54788295418644, sudu: 24567978777492, jaime: 55350915332244, caro: 32288140085012, cristian: 48493524357268, brisa: 47071350698516, miguel: 28269839522452, samuel: 40230868739348, mike: 42677627758740 };\nlet users = [];\ntry { users = $('Get Agent Availability').first().json.users || []; } catch (e) { users = []; }\n// v11.6.1: Zendesk's users API does not return agent_ooo, so automatic OOO never fires (on purpose: agents toggling OOO at night are NOT reassigned).\n// Manual list: only the keys here are covered (COVER map in Build Zendesk Update). Edit when someone leaves / comes back.\nconst MANUAL_OOO = ['sudu'];\nconst ooo_ids = [...new Set(users.filter(u => u.suspended === true || u.active === false).map(u => u.id).concat(MANUAL_OOO.map(k => KEYS[k]).filter(Boolean)))];\nconst ooo = Object.keys(KEYS).filter(k => ooo_ids.includes(KEYS[k]));\nreturn [{ json: { source: 'lookups', tags, catalog, ooo, ooo_ids, availability_loaded: users.length > 0 } }];"
       },
-      "id": "786b832c-b485-44ca-81bc-89e0cde61a1c",
+      "id": "3913fcff-a2a5-43de-bc46-41aa8b06e728",
       "name": "Prepare Lookups",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        57984,
-        18880
+        62032,
+        20464
       ]
     },
     {
       "parameters": {
-        "jsCode": "// v11: two kinds of work per run.\n//  (a) NEW: unassigned new/open tickets in Worker Support + Company Support (max 5).\n//  (b) SWEEP (re-route): tickets still in a generic category (Worker General Info / General questions),\n//      >= 30 min old, unassigned / with Samuel / with an OOO agent, not yet re-routed (max 3).\n//  (c) CATEGORY-ONLY (v11.4): generic-category tickets already with a real owner → Nova sets the right\n//      category + note, keeps the assignee (max 3). Tag nova_categorized (once).\nconst WS = 22616861202452, CS = 23897889259668, CAT = 22865771347348;\nconst SAMUEL = 40230868739348;\nconst EXCLUDED = [253224, 250770, 250793];\nconst KEEP = [256002, 256471, 255983, 256648, 256791]; // humans decided these stay with the current owner (or tag nova_keep_owner)\nconst GENERIC = ['account__worker_general_info', 'account__client_general_info', 'account__general_questions__account_'];\nconst MAX_NEW = 5, MAX_SWEEP = 3, MAX_RECAT = 3, SWEEP_MIN_AGE_MIN = 30;\nconst now = Date.now();\n// v11.3: everything arrives through the Merge node input — no $() lookups (they made the task runner pull the whole execution and stall)\nconst items = $input.all().map(i => i.json);\nconst L = items.find(x => x.source === 'lookups') || {};\nconst OOO_IDS = L.ooo_ids || [];\nconst res = src => (items.find(x => x.source === src) || {}).results || [];\nconst ageMin = t => (now - new Date(t.created_at).getTime()) / 60000;\nconst cat = t => t.category || null;\nconst row = (t, mode) => ({ json: {\n  ticket_id: t.id, subject: t.subject, group_id: t.group_id, status: t.status,\n  requester_id: t.requester_id, created_at: t.created_at, current_category: cat(t),\n  current_assignee: t.assignee_id || null, channel: t.channel, tags: t.tags, mode,\n}});\nconst out = [];\nconst seen = new Set();\n// (a) NEW\nconst fresh = [...res('new_ws'), ...res('new_cs')]\n  .sort((a, b) => new Date(a.created_at) - new Date(b.created_at)); // v11.6: oldest first (no starvation)\nfor (const t of fresh) {\n  if (out.length >= MAX_NEW) break;\n  if (![WS, CS].includes(t.group_id) || t.assignee_id || EXCLUDED.includes(t.id) || seen.has(t.id)) continue;\n  const tg = t.tags || [];\n  if (tg.includes('nova_routing_failed')) continue; // both writes failed before — a human handles it\n  if (tg.filter(x => /^nova_try_/.test(x)).length >= 3) continue; // v11.6: 3 attempts without a decision\n  const looksEmptyHandoff = /^Conversation with/i.test(t.description || '') && tg.includes('ada_messaging_handoff');\n  if (looksEmptyHandoff && ageMin(t) < 10) continue; // next run picks it up once the customer has written\n  seen.add(t.id); out.push(row(t, 'new'));\n}\n// (b) SWEEP generic categories\nconst generic = [...res('gen_wgi'), ...res('gen_gq')]\n  .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));\nlet sweep = 0, recat = 0;\nfor (const t of generic) {\n  if (sweep >= MAX_SWEEP && recat >= MAX_RECAT) break;\n  if (![WS, CS].includes(t.group_id) || EXCLUDED.includes(t.id) || seen.has(t.id)) continue;\n  if (!GENERIC.includes(cat(t))) continue;\n  const tg = t.tags || [];\n  if (['nova_reasignado', 'nova_categorized', 'nova_routing_failed', 'nova_low_context', 'nova_followup_entrega'].some(x => tg.includes(x))) continue;\n  if (ageMin(t) < SWEEP_MIN_AGE_MIN) continue; // give the customer time to explain\n  const a = t.assignee_id || null;\n  const unowned = a === null || a === SAMUEL || OOO_IDS.includes(a);\n  if (unowned && !KEEP.includes(t.id) && !tg.includes('nova_keep_owner')) {\n    if (sweep >= MAX_SWEEP) continue;\n    seen.add(t.id); out.push(row(t, 'reroute')); sweep++;\n  } else if (a !== null) {\n    // (c) v11.4 CATEGORY-ONLY: already with a real owner (or a human kept it there) → fix the category, never touch the assignee\n    if (recat >= MAX_RECAT) continue;\n    seen.add(t.id); out.push(row(t, 'recat')); recat++;\n  }\n}\nreturn out;"
+        "jsCode": "// v11: two kinds of work per run.\n//  (a) NEW: unassigned new/open tickets in Worker Support + Company Support (max 5).\n//  (b) SWEEP (re-route): tickets still in a generic category (Worker General Info / General questions),\n//      >= 30 min old, unassigned / with Samuel / with an OOO agent, not yet re-routed (max 3).\n//  (c) CATEGORY-ONLY (v11.4): generic-category tickets already with a real owner → Nova sets the right\n//      category + note, keeps the assignee (max 3). Tag nova_categorized (once).\nconst WS = 22616861202452, CS = 23897889259668, CAT = 22865771347348;\nconst SAMUEL = 40230868739348;\nconst EXCLUDED = [253224, 250770, 250793];\nconst KEEP = [256002, 256471, 255983, 256648, 256791]; // humans decided these stay with the current owner (or tag nova_keep_owner)\nconst GENERIC = ['account__worker_general_info', 'account__client_general_info', 'account__general_questions__account_'];\nconst MAX_NEW = 5, MAX_SWEEP = 3, MAX_RECAT = 3, SWEEP_MIN_AGE_MIN = 30;\nconst now = Date.now();\n// v11.3: everything arrives through the Merge node input — no $() lookups (they made the task runner pull the whole execution and stall)\nconst items = $input.all().map(i => i.json);\nconst L = items.find(x => x.source === 'lookups') || {};\nconst OOO_IDS = L.ooo_ids || [];\nconst res = src => (items.find(x => x.source === src) || {}).results || [];\nconst ageMin = t => (now - new Date(t.created_at).getTime()) / 60000;\nconst cat = t => t.category || null;\nconst row = (t, mode) => ({ json: {\n  ticket_id: t.id, subject: t.subject, group_id: t.group_id, status: t.status,\n  requester_id: t.requester_id, created_at: t.created_at, current_category: cat(t),\n  current_assignee: t.assignee_id || null, channel: t.channel, tags: t.tags, mode,\n}});\nconst out = [];\nconst seen = new Set();\n// (a) NEW\nconst fresh = [...res('new_ws'), ...res('new_cs')]\n  .sort((a, b) => new Date(a.created_at) - new Date(b.created_at)); // v11.6: oldest first (no starvation)\nfor (const t of fresh) {\n  if (out.length >= MAX_NEW) break;\n  if (![WS, CS].includes(t.group_id) || t.assignee_id || EXCLUDED.includes(t.id) || seen.has(t.id)) continue;\n  const tg = t.tags || [];\n  if (tg.includes('nova_routing_failed')) continue; // both writes failed before — a human handles it\n  if (tg.filter(x => /^nova_try_/.test(x)).length >= 3) continue; // v11.6: 3 attempts without a decision\n  const looksEmptyHandoff = /^Conversation with/i.test(t.description || '') && tg.includes('ada_messaging_handoff');\n  if (looksEmptyHandoff && ageMin(t) < 10) continue; // next run picks it up once the customer has written\n  seen.add(t.id); out.push(row(t, 'new'));\n}\n// (b) SWEEP generic categories\nconst generic = [...res('gen_wgi'), ...res('gen_gq'), ...res('gen_cgi')] // v11.6.1: + Client General Info\n  .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));\nlet sweep = 0, recat = 0;\nfor (const t of generic) {\n  if (sweep >= MAX_SWEEP && recat >= MAX_RECAT) break;\n  if (![WS, CS].includes(t.group_id) || EXCLUDED.includes(t.id) || seen.has(t.id)) continue;\n  if (!GENERIC.includes(cat(t))) continue;\n  const tg = t.tags || [];\n  if (['nova_reasignado', 'nova_categorized', 'nova_routing_failed', 'nova_low_context', 'nova_followup_entrega'].some(x => tg.includes(x))) continue;\n  if (ageMin(t) < SWEEP_MIN_AGE_MIN) continue; // give the customer time to explain\n  const a = t.assignee_id || null;\n  const unowned = a === null || a === SAMUEL || OOO_IDS.includes(a);\n  if (unowned && !KEEP.includes(t.id) && !tg.includes('nova_keep_owner')) {\n    if (sweep >= MAX_SWEEP) continue;\n    seen.add(t.id); out.push(row(t, 'reroute')); sweep++;\n  } else if (a !== null) {\n    // (c) v11.4 CATEGORY-ONLY: already with a real owner (or a human kept it there) → fix the category, never touch the assignee\n    if (recat >= MAX_RECAT) continue;\n    seen.add(t.id); out.push(row(t, 'recat')); recat++;\n  }\n}\nreturn out;"
       },
-      "id": "0ba9d46a-bf0f-4174-9ffa-b13e36138e1d",
+      "id": "2c768e61-e58c-47ec-a2cc-02af49c67f57",
       "name": "Filter & Prioritize",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        58400,
-        18672
+        62448,
+        20256
       ]
     },
     {
       "parameters": {
         "options": {}
       },
-      "id": "391ae6d5-b4aa-48cf-b578-7385d349fb7d",
+      "id": "261fddd1-d0e6-49a0-ab43-c92d1e571587",
       "name": "Loop Over Tickets",
       "type": "n8n-nodes-base.splitInBatches",
       "typeVersion": 3,
       "position": [
-        58592,
-        18672
+        62640,
+        20256
       ]
     },
     {
@@ -456,13 +456,13 @@
           "maxIterations": 10
         }
       },
-      "id": "3f3ff9b2-d706-4f5f-b6ae-70405f42c481",
+      "id": "e0daed8f-788b-4656-9cf3-fe5fa928566f",
       "name": "Nova Routing Agent",
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 1.7,
       "position": [
-        58944,
-        18672
+        62992,
+        20256
       ],
       "retryOnFail": true,
       "maxTries": 2,
@@ -479,13 +479,13 @@
           "maxTokensToSample": 4096
         }
       },
-      "id": "0f110b85-04ff-470b-8f82-10f82e262c24",
+      "id": "676f1f5c-3e71-463e-b876-506c1af2abd3",
       "name": "Claude (Anthropic)",
       "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
       "typeVersion": 1.3,
       "position": [
-        58560,
-        18944
+        62608,
+        20528
       ],
       "credentials": {
         "anthropicApi": {
@@ -515,13 +515,13 @@
         },
         "options": {}
       },
-      "id": "d655a43a-a934-4b66-b3a3-6ac1a0e12ba7",
+      "id": "b40009b5-b1ef-4da1-b73f-22b216e081ad",
       "name": "Get Ticket Conversation",
       "type": "n8n-nodes-base.httpRequestTool",
       "typeVersion": 4.2,
       "position": [
-        58704,
-        18944
+        62752,
+        20528
       ],
       "credentials": {
         "zendeskApi": {
@@ -551,13 +551,13 @@
         },
         "options": {}
       },
-      "id": "908a07d7-2465-48f2-bd1b-b1f95f3fd288",
+      "id": "c79eb03c-ca95-42f4-8cfc-c4c7f42328de",
       "name": "Get Conversation Log",
       "type": "n8n-nodes-base.httpRequestTool",
       "typeVersion": 4.2,
       "position": [
-        58832,
-        18944
+        62880,
+        20528
       ],
       "credentials": {
         "zendeskApi": {
@@ -587,13 +587,13 @@
         },
         "options": {}
       },
-      "id": "91af9172-0c0f-4137-8c1d-66785f8d99f5",
+      "id": "299e85dc-65d2-4a6e-9594-b121f3107ec7",
       "name": "Get Chat History (Aura)",
       "type": "n8n-nodes-base.httpRequestTool",
       "typeVersion": 4.2,
       "position": [
-        58896,
-        19120
+        62944,
+        20704
       ],
       "credentials": {
         "zendeskApi": {
@@ -610,13 +610,13 @@
         "nodeCredentialType": "zendeskApi",
         "options": {}
       },
-      "id": "ebd9ab85-56fa-4b3d-964d-09cb37d7e3ac",
+      "id": "6d529217-852e-427e-bd3a-c107f66e0570",
       "name": "Get Side Conversations",
       "type": "n8n-nodes-base.httpRequestTool",
       "typeVersion": 4.2,
       "position": [
-        58960,
-        18944
+        63008,
+        20528
       ],
       "credentials": {
         "zendeskApi": {
@@ -642,13 +642,13 @@
         },
         "options": {}
       },
-      "id": "80269d35-0768-4724-b0d4-c62d755697c2",
+      "id": "4ce0d607-f7b5-40de-bbc9-551d6f212f7e",
       "name": "Get Requester Open Tickets",
       "type": "n8n-nodes-base.httpRequestTool",
       "typeVersion": 4.2,
       "position": [
-        59104,
-        18944
+        63152,
+        20528
       ],
       "credentials": {
         "zendeskApi": {
@@ -673,13 +673,13 @@
         },
         "options": {}
       },
-      "id": "51fe121b-02d9-43b9-afcc-077fe0e23fe7",
+      "id": "457ccd3e-ba0b-4bb9-9a18-add752a9ebce",
       "name": "Get Category Directory",
       "type": "n8n-nodes-base.googleSheetsTool",
       "typeVersion": 4.5,
       "position": [
-        59248,
-        18944
+        63296,
+        20528
       ],
       "credentials": {
         "googleSheetsOAuth2Api": {
@@ -698,13 +698,13 @@
         ],
         "options": {}
       },
-      "id": "2defc794-7929-4468-abd3-f1ce1ecc22c9",
+      "id": "d36faf7a-7a6e-4489-870d-7563ac966c7e",
       "name": "MCP Onsight",
       "type": "@n8n/n8n-nodes-langchain.mcpClientTool",
       "typeVersion": 1.2,
       "position": [
-        59376,
-        18944
+        63424,
+        20528
       ],
       "credentials": {
         "httpBearerAuth": {
@@ -718,28 +718,28 @@
         "schemaType": "manual",
         "inputSchema": "{\n \"type\": \"object\",\n \"properties\": {\n  \"ticket_id\": {\n   \"type\": \"number\"\n  },\n  \"requester_type\": {\n   \"type\": \"string\",\n   \"enum\": [\n    \"worker\",\n    \"client\"\n   ]\n  },\n  \"category_name\": {\n   \"type\": \"string\",\n   \"description\": \"Exact name from the VALID CATEGORIES list\"\n  },\n  \"category_tag\": {\n   \"type\": \"string\",\n   \"description\": \"Exact tag from the VALID CATEGORIES list\"\n  },\n  \"owner_key\": {\n   \"type\": \"string\",\n   \"enum\": [\n    \"justin\",\n    \"sudu\",\n    \"jaime\",\n    \"caro\",\n    \"cristian\",\n    \"brisa\",\n    \"miguel\",\n    \"samuel\",\n    \"mike\"\n   ]\n  },\n  \"confidence\": {\n   \"type\": \"string\",\n   \"enum\": [\n    \"high\",\n    \"medium\",\n    \"low\"\n   ]\n  },\n  \"low_context\": {\n   \"type\": \"boolean\"\n  },\n  \"reason\": {\n   \"type\": \"string\"\n  },\n  \"possible_duplicate_of\": {\n   \"type\": \"array\",\n   \"items\": {\n    \"type\": \"number\"\n   }\n  },\n  \"verified_facts\": {\n   \"type\": \"string\",\n   \"description\": \"Short Onsight facts that were actually verified, or 'not verified'\"\n  },\n  \"urgent\": {\n   \"type\": \"boolean\"\n  },\n  \"urgent_reason\": {\n   \"type\": \"string\"\n  },\n  \"ask\": {\n   \"type\": \"string\"\n  },\n  \"onsight_facts\": {\n   \"type\": \"string\"\n  },\n  \"side_conversations\": {\n   \"type\": \"string\"\n  },\n  \"suggested_action\": {\n   \"type\": \"string\"\n  },\n  \"suggested_reply\": {\n   \"type\": \"string\"\n  },\n  \"reply_language\": {\n   \"type\": \"string\",\n   \"description\": \"es, en, pt…\"\n  },\n  \"request_type\": {\n   \"type\": \"string\",\n   \"enum\": [\n    \"issue\",\n    \"question\",\n    \"product_feedback\",\n    \"internal_process\"\n   ]\n  },\n  \"same_issue_duplicate_of\": {\n   \"type\": \"number\",\n   \"description\": \"Open ticket of the same requester about the SAME issue that already has an assignee; 0 if none\"\n  },\n  \"duplicate_assignee_id\": {\n   \"type\": \"number\",\n   \"description\": \"assignee_id of same_issue_duplicate_of; 0 if none\"\n  },\n  \"possible_product_issue\": {\n   \"type\": \"boolean\"\n  },\n  \"issue_signature\": {\n   \"type\": \"string\",\n   \"description\": \"3-8 words describing the symptom, empty if not a product issue\"\n  },\n  \"last_customer_message_at\": {\n   \"type\": \"string\",\n   \"description\": \"ISO 8601 timestamp of the customer's last message (comments, conversation log or Aura chat history); empty if unknown\"\n  }\n },\n \"required\": [\n  \"ticket_id\",\n  \"requester_type\",\n  \"category_name\",\n  \"category_tag\",\n  \"owner_key\",\n  \"confidence\",\n  \"low_context\",\n  \"reason\",\n  \"urgent\",\n  \"ask\",\n  \"onsight_facts\",\n  \"suggested_action\",\n  \"suggested_reply\",\n  \"request_type\",\n  \"possible_product_issue\"\n ]\n}"
       },
-      "id": "28f1925f-5e72-4ea5-b0b2-59ad47f7b001",
+      "id": "4baf686f-0d45-4469-9ad6-3ac9daac169b",
       "name": "Routing Decision Schema",
       "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
       "typeVersion": 1.2,
       "position": [
-        59520,
-        18944
+        63568,
+        20528
       ]
     },
     {
       "parameters": {
         "mode": "raw",
-        "jsonOutput": "={{ (() => {\n  const d = $json.output || {};\n  const tk = $('Loop Over Tickets').item.json || {};\n  const L = $('Prepare Lookups').first().json || {};\n  const A = { justin: 54788295418644, sudu: 24567978777492, jaime: 55350915332244, caro: 32288140085012, cristian: 48493524357268, brisa: 47071350698516, miguel: 28269839522452, samuel: 40230868739348, mike: 42677627758740 };\n  const N = { justin: 'Justin', sudu: 'Sudu', jaime: 'Jaime', caro: 'Caro', cristian: 'Cristian', brisa: 'Brisa', miguel: 'Miguel', samuel: 'Samuel', mike: 'Mike' };\n  const S = { justin: 'U0CA6JRHVM3', sudu: 'U03U61FQJKA', jaime: 'U0CEQGZN7AB', caro: 'U063KEHP2SD', cristian: 'U0AU0TPJDM5', brisa: 'U0AJMGBVCR5', miguel: 'U06LW3ASH7D', samuel: 'U099JCSKB3Q', mike: 'U09NCCJJ2UT' };\n  const COVER = { sudu: 'justin', brisa: 'cristian', justin: 'sudu', jaime: 'caro', caro: 'jaime', cristian: 'brisa', miguel: 'samuel', samuel: 'miguel', mike: 'miguel' };\n  const OOO = L.ooo || [];\n  const CS = 23897889259668, CAT = 22865771347348, TOR = 32273934250132, PAYFLOW = 25216334038676;\n  const TORV = { issue: 'issue_request', question: 'question_request', product_feedback: 'product_feedback_request', internal_process: 'internal_process_request' };\n  const GENERIC = ['account__worker_general_info', 'account__client_general_info', 'account__general_questions__account_'];\n  const MSG = ['whatsapp', 'native_messaging', 'sunshine_conversations_api', 'sunshine_conversations_facebook_messenger', 'chat', 'instagram_dm', 'line', 'telegram', 'wechat'];\n  if (!d.owner_key || !d.ticket_id || !A[d.owner_key]) return JSON.stringify({ skip: true, urgent: false, error: 'Agent returned no valid decision' });\n  const tags = L.tags || [];\n  const reroute = tk.mode === 'reroute';\n  const recat = tk.mode === 'recat';\n  let o = d.owner_key; const notes = []; let conf = d.confidence; let byDup = false;\n  if (reroute) notes.push('Re-route sweep: this ticket was still in a generic category (' + (tk.current_category || '-') + ')' + (tk.current_assignee ? ' with agent ' + tk.current_assignee : ' without owner') + ' — re-read and reassigned to the domain owner.');\n  // 1) Same requester + SAME issue already assigned to a current owner → same agent\n  const dupOwner = Object.keys(A).find(k => A[k] === Number(d.duplicate_assignee_id));\n  if (d.same_issue_duplicate_of && dupOwner) {\n    o = dupOwner; byDup = true;\n    notes.push('Same issue as #' + d.same_issue_duplicate_of + ' (already with ' + N[o] + ') — assigned to the same agent. Please check and merge.');\n  } else if (d.low_context) {\n    // 2) Low-context (nothing useful in comments, conversation log AND Aura chat history) → general questions owner\n    o = d.requester_type === 'client' ? 'miguel' : 'cristian';\n    notes.push('Low-context ticket — assigned to ' + N[o] + ' (general questions). ' + (reroute ? 'Still no real ask after the re-check.' : 'Nova re-checks it after 30 min in case the customer writes more.'));\n  }\n  // v11.4 category-only: keep the current assignee; only flag a domain mismatch in the note\n  const curKey = Object.keys(A).find(k => A[k] === Number(tk.current_assignee));\n  if (recat) {\n    const dom = o;\n    notes.length = 0;\n    notes.push('Category-only pass: ticket already had an owner but a generic category (' + (tk.current_category || '-') + ') — Nova re-read it and set the specific category. Assignee NOT changed.');\n    if (curKey && dom !== curKey) notes.push('Heads-up: by domain this looks like ' + N[dom] + \"'s — reassign only if it makes sense (current: \" + N[curKey] + ').');\n    if (!curKey) notes.push('Current assignee (' + tk.current_assignee + ') is outside the routing roster — domain owner would be ' + N[dom] + '.');\n    if (curKey) o = curKey;\n  }\n  // 3) Availability: owner out of office → cover\n  if (!recat && OOO.includes(o)) {\n    const c = COVER[o];\n    if (c && !OOO.includes(c)) { notes.push(N[o] + ' is out of office — covered by ' + N[c] + '.'); o = c; }\n    else notes.push(N[o] + ' is out of office and the cover is not available — please reassign manually.');\n  }\n  // 4) Category: must exist in Zendesk; generic ones only for low-context\n  const isGeneric = GENERIC.includes(d.category_tag);\n  const tagOk = tags.includes(d.category_tag) && !(isGeneric && !d.low_context);\n  if (!tags.includes(d.category_tag)) notes.push('Suggested category \"' + d.category_name + '\" not set: tag \"' + d.category_tag + '\" is not a valid option.');\n  else if (isGeneric && !d.low_context) { conf = 'low'; notes.push('Generic category \"' + d.category_name + '\" not saved because the ticket has a real ask — please set the specific category.'); }\n  if (d.requester_type === 'client' && conf !== 'high' && !byDup) notes.push(\"I don't have a high confidence score on what the client needs — please review, and if it's not for you, assign it to \" + (o === 'miguel' ? 'Samuel' : 'Miguel') + '. Thanks! 🙌');\n  if (!byDup && (d.possible_duplicate_of || []).length) notes.push('Possible duplicate of #' + d.possible_duplicate_of.join(', #') + ' — please check and merge if it is the same issue; otherwise handle as a normal ticket.');\n  if (d.possible_product_issue) notes.push('Possible product/tech issue: \"' + (d.issue_signature || '') + '\" — ask for a screenshot or screen recording (device, app version, time of the error) so it can be escalated to Tech/Product.');\n  // 5) How to reply on this channel (v11)\n  const ch = tk.channel || '';\n  if (MSG.includes(ch)) {\n    const last = d.last_customer_message_at ? Date.parse(d.last_customer_message_at) : NaN;\n    const hrs = isNaN(last) ? null : (Date.now() - last) / 36e5;\n    const lang = d.reply_language === 'en' ? 'en' : 'es';\n    let line = '📱 Messaging ticket (' + ch + '): reply from Agent Workspace (or the Sunshine Conversations API). Public comments posted through the Ticket API do NOT reach the customer.';\n    if (ch === 'whatsapp') {\n      if (hrs === null) line += ' Last customer message time unknown — check the WhatsApp 24h window before replying.';\n      else if (hrs > 24) line += ' ⏰ WhatsApp 24h window is CLOSED (last customer message ~' + Math.round(hrs) + 'h ago): first send the template \"reactivar_conversacion\" (' + lang + '); send the reply only after the customer answers it.';\n      else line += ' WhatsApp 24h window open (last customer message ~' + Math.round(hrs) + 'h ago, closes in ~' + Math.max(0, Math.round(24 - hrs)) + 'h).';\n    }\n    notes.push(line);\n  }\n  const rt = TORV[d.request_type] || '';\n  const body = [\n    '🤖 Nova · Domain routing + diagnosis (n8n AI agent v11.4' + (reroute ? ', re-route sweep' : recat ? ', category only' : '') + ') · ' + $now.setZone('America/Bogota').toFormat('dd LLL HH:mm') + ' COL',\n    'Category → ' + d.category_name + ' · Type: ' + (d.request_type || '-') + ' · Owner: ' + N[o] + ' · Confidence: ' + conf,\n    '• Ask: ' + (d.ask || d.reason),\n    '• Onsight: ' + (d.onsight_facts || d.verified_facts || 'not verified'),\n    '• Side conversations: ' + (d.side_conversations || 'none'),\n    '• Duplicates: ' + ((d.possible_duplicate_of || []).length ? '#' + d.possible_duplicate_of.join(', #') : 'none'),\n    '• Suggested action: ' + (d.suggested_action || '-') + ' (owner: ' + N[o] + ')',\n    '• Suggested reply' + (d.reply_language ? ' (' + d.reply_language + ')' : '') + ': \"' + (d.suggested_reply || '') + '\"',\n    'Routing reason: ' + d.reason\n  ].concat(notes).concat(['This is a suggestion — please validate before sending 🙌']).filter(Boolean).join('\\n');\n  const cf = [];\n  if (tagOk) cf.push({ id: CAT, value: d.category_tag });\n  if (rt) cf.push({ id: TOR, value: rt });\n  // recat: never send assignee_id / group_id (owner stays as is)\n  const own = recat ? {} : { assignee_id: A[o] };\n  const grp = !recat && d.requester_type === 'client';\n  const t = { ...own, comment: { public: false, body } };\n  if (cf.length) t.custom_fields = cf;\n  if (grp) t.group_id = CS;\n  // Retry: same update + Payflow = n/a (Zendesk rejects some categories with \"Payflow: needed\")\n  const r = { ...own, comment: { public: false, body }, custom_fields: cf.concat([{ id: PAYFLOW, value: 'n/a' }]) };\n  if (grp) r.group_id = CS;\n  const f = { ...own, comment: { public: false, body: body + '\\n(Category / type of request could not be saved automatically — required fields missing. Please set them when working the ticket.)' } };\n  if (grp) f.group_id = CS;\n  // v11.6: 4th attempt — required client fields as placeholders (Zendesk rejects client tickets without them)\n  const PH = [{ id: 25216274102548, value: 'POR IDENTIFICAR' }, { id: 44459532208276, value: 'POR IDENTIFICAR' }, { id: 33369429616276, value: 'colombia_client_country' }];\n  const p = { ...own, comment: { public: false, body: body + '\\n(Required client fields were filled with POR IDENTIFICAR / Colombia as placeholders so the ticket could be assigned. Please correct them once the client is identified.)' }, custom_fields: cf.concat([{ id: PAYFLOW, value: 'n/a' }], PH) };\n  if (grp || Number(tk.group_id) === CS) p.group_id = CS;\n  const add = [reroute ? 'nova_reasignado' : recat ? 'nova_categorized' : 'nova_routed'];\n  if (d.low_context) add.push('nova_low_context');\n  if (!tagOk && GENERIC.includes(tk.current_category || '')) add.push('nova_needs_category');\n  const addFallback = [...new Set(add.concat(['nova_needs_category']))];\n  return JSON.stringify({ skip: false, ticket_id: d.ticket_id, mode: tk.mode || 'new', channel: ch, owner: N[o], owner_slack_id: S[o] || '', category_name: d.category_name, category_tag: d.category_tag, category_saved: tagOk, request_type: rt, confidence: conf, low_context: !!d.low_context, urgent: !!d.urgent, urgent_reason: d.urgent_reason || '', same_issue_duplicate_of: d.same_issue_duplicate_of || '', assigned_by_duplicate: byDup, possible_product_issue: !!d.possible_product_issue, issue_signature: d.issue_signature || '', reason: d.reason || '', update: { ticket: t }, retry: { ticket: r }, fallback: { ticket: f }, placeholder: { ticket: p }, add_tags: add, add_tags_fallback: addFallback });\n})() }}",
+        "jsonOutput": "={{ (() => {\n  const d = $json.output || {};\n  const tk = $('Loop Over Tickets').item.json || {};\n  const L = $('Prepare Lookups').first().json || {};\n  const A = { justin: 54788295418644, sudu: 24567978777492, jaime: 55350915332244, caro: 32288140085012, cristian: 48493524357268, brisa: 47071350698516, miguel: 28269839522452, samuel: 40230868739348, mike: 42677627758740 };\n  const N = { justin: 'Justin', sudu: 'Sudu', jaime: 'Jaime', caro: 'Caro', cristian: 'Cristian', brisa: 'Brisa', miguel: 'Miguel', samuel: 'Samuel', mike: 'Mike' };\n  const S = { justin: 'U0CA6JRHVM3', sudu: 'U03U61FQJKA', jaime: 'U0CEQGZN7AB', caro: 'U063KEHP2SD', cristian: 'U0AU0TPJDM5', brisa: 'U0AJMGBVCR5', miguel: 'U06LW3ASH7D', samuel: 'U099JCSKB3Q', mike: 'U09NCCJJ2UT' };\n  const COVER = { sudu: 'justin', brisa: 'cristian', justin: 'sudu', jaime: 'caro', caro: 'jaime', cristian: 'brisa', miguel: 'samuel', samuel: 'miguel', mike: 'miguel' };\n  const OOO = L.ooo || [];\n  const CS = 23897889259668, CAT = 22865771347348, TOR = 32273934250132, PAYFLOW = 25216334038676;\n  const TORV = { issue: 'issue_request', question: 'question_request', product_feedback: 'product_feedback_request', internal_process: 'internal_process_request' };\n  const GENERIC = ['account__worker_general_info', 'account__client_general_info', 'account__general_questions__account_'];\n  const MSG = ['whatsapp', 'native_messaging', 'sunshine_conversations_api', 'sunshine_conversations_facebook_messenger', 'chat', 'instagram_dm', 'line', 'telegram', 'wechat'];\n  if (!d.owner_key || !d.ticket_id || !A[d.owner_key]) return JSON.stringify({ skip: true, urgent: false, error: 'Agent returned no valid decision' });\n  const tags = L.tags || [];\n  const reroute = tk.mode === 'reroute';\n  const recat = tk.mode === 'recat';\n  let o = d.owner_key; const notes = []; let conf = d.confidence; let byDup = false;\n  if (reroute) notes.push('Re-route sweep: this ticket was still in a generic category (' + (tk.current_category || '-') + ')' + (tk.current_assignee ? ' with agent ' + tk.current_assignee : ' without owner') + ' — re-read and reassigned to the domain owner.');\n  // 1) Same requester + SAME issue already assigned to a current owner → same agent\n  const dupOwner = Object.keys(A).find(k => A[k] === Number(d.duplicate_assignee_id));\n  if (d.same_issue_duplicate_of && dupOwner) {\n    o = dupOwner; byDup = true;\n    notes.push('Same issue as #' + d.same_issue_duplicate_of + ' (already with ' + N[o] + ') — assigned to the same agent. Please check and merge.');\n  } else if (d.low_context) {\n    // 2) Low-context (nothing useful in comments, conversation log AND Aura chat history) → general questions owner\n    o = d.requester_type === 'client' ? 'miguel' : 'cristian';\n    notes.push('Low-context ticket — assigned to ' + N[o] + ' (general questions). ' + (reroute ? 'Still no real ask after the re-check.' : 'Nova re-checks it after 30 min in case the customer writes more.'));\n  }\n  // v11.4 category-only: keep the current assignee; only flag a domain mismatch in the note\n  const curKey = Object.keys(A).find(k => A[k] === Number(tk.current_assignee));\n  if (recat) {\n    const dom = o;\n    notes.length = 0;\n    notes.push('Category-only pass: ticket already had an owner but a generic category (' + (tk.current_category || '-') + ') — Nova re-read it and set the specific category. Assignee NOT changed.');\n    if (curKey && dom !== curKey) notes.push('Heads-up: by domain this looks like ' + N[dom] + \"'s — reassign only if it makes sense (current: \" + N[curKey] + ').');\n    if (!curKey) notes.push('Current assignee (' + tk.current_assignee + ') is outside the routing roster — domain owner would be ' + N[dom] + '.');\n    if (curKey) o = curKey;\n  }\n  // 3) Availability: owner out of office → cover\n  if (!recat && OOO.includes(o)) {\n    const c = COVER[o];\n    if (c && !OOO.includes(c)) { notes.push(N[o] + ' is out of office — covered by ' + N[c] + '.'); o = c; }\n    else notes.push(N[o] + ' is out of office and the cover is not available — please reassign manually.');\n  }\n  // 4) Category: must exist in Zendesk; generic ones only for low-context\n  const isGeneric = GENERIC.includes(d.category_tag);\n  const tagOk = tags.includes(d.category_tag) && !(isGeneric && !d.low_context);\n  if (!tags.includes(d.category_tag)) notes.push('Suggested category \"' + d.category_name + '\" not set: tag \"' + d.category_tag + '\" is not a valid option.');\n  else if (isGeneric && !d.low_context) { conf = 'low'; notes.push('Generic category \"' + d.category_name + '\" not saved because the ticket has a real ask — please set the specific category.'); }\n  if (d.requester_type === 'client' && conf !== 'high' && !byDup) notes.push(\"I don't have a high confidence score on what the client needs — please review, and if it's not for you, assign it to \" + (o === 'miguel' ? 'Samuel' : 'Miguel') + '. Thanks! 🙌');\n  if (!byDup && (d.possible_duplicate_of || []).length) notes.push('Possible duplicate of #' + d.possible_duplicate_of.join(', #') + ' — please check and merge if it is the same issue; otherwise handle as a normal ticket.');\n  if (d.possible_product_issue) notes.push('Possible product/tech issue: \"' + (d.issue_signature || '') + '\" — ask for a screenshot or screen recording (device, app version, time of the error) so it can be escalated to Tech/Product.');\n  // 5) How to reply on this channel (v11)\n  const ch = tk.channel || '';\n  if (MSG.includes(ch)) {\n    const last = d.last_customer_message_at ? Date.parse(d.last_customer_message_at) : NaN;\n    const hrs = isNaN(last) ? null : (Date.now() - last) / 36e5;\n    const lang = d.reply_language === 'en' ? 'en' : 'es';\n    let line = '📱 Messaging ticket (' + ch + '): reply from Agent Workspace (or the Sunshine Conversations API). Public comments posted through the Ticket API do NOT reach the customer.';\n    if (ch === 'whatsapp') {\n      if (hrs === null) line += ' Last customer message time unknown — check the WhatsApp 24h window before replying.';\n      else if (hrs > 24) line += ' ⏰ WhatsApp 24h window is CLOSED (last customer message ~' + Math.round(hrs) + 'h ago): first send the template \"reactivar_conversacion\" (' + lang + '); send the reply only after the customer answers it.';\n      else line += ' WhatsApp 24h window open (last customer message ~' + Math.round(hrs) + 'h ago, closes in ~' + Math.max(0, Math.round(24 - hrs)) + 'h).';\n    }\n    notes.push(line);\n  }\n  const rt = TORV[d.request_type] || '';\n  const body = [\n    '🤖 Nova · Domain routing + diagnosis (n8n AI agent v11.6.1' + (reroute ? ', re-route sweep' : recat ? ', category only' : '') + ') · ' + $now.setZone('America/Bogota').toFormat('dd LLL HH:mm') + ' COL',\n    'Category → ' + d.category_name + ' · Type: ' + (d.request_type || '-') + ' · Owner: ' + N[o] + ' · Confidence: ' + conf,\n    '• Ask: ' + (d.ask || d.reason),\n    '• Onsight: ' + (d.onsight_facts || d.verified_facts || 'not verified'),\n    '• Side conversations: ' + (d.side_conversations || 'none'),\n    '• Duplicates: ' + ((d.possible_duplicate_of || []).length ? '#' + d.possible_duplicate_of.join(', #') : 'none'),\n    '• Suggested action: ' + (d.suggested_action || '-') + ' (owner: ' + N[o] + ')',\n    '• Suggested reply' + (d.reply_language ? ' (' + d.reply_language + ')' : '') + ': \"' + (d.suggested_reply || '') + '\"',\n    'Routing reason: ' + d.reason\n  ].concat(notes).concat(['This is a suggestion — please validate before sending 🙌']).filter(Boolean).join('\\n');\n  const cf = [];\n  if (tagOk) cf.push({ id: CAT, value: d.category_tag });\n  if (rt) cf.push({ id: TOR, value: rt });\n  // recat: never send assignee_id / group_id (owner stays as is)\n  const own = recat ? {} : { assignee_id: A[o] };\n  const grp = !recat && d.requester_type === 'client';\n  const t = { ...own, comment: { public: false, body } };\n  if (cf.length) t.custom_fields = cf;\n  if (grp) t.group_id = CS;\n  // Retry: same update + Payflow = n/a (Zendesk rejects some categories with \"Payflow: needed\")\n  const r = { ...own, comment: { public: false, body }, custom_fields: cf.concat([{ id: PAYFLOW, value: 'n/a' }]) };\n  if (grp) r.group_id = CS;\n  const f = { ...own, comment: { public: false, body: body + '\\n(Category / type of request could not be saved automatically — required fields missing. Please set them when working the ticket.)' } };\n  if (grp) f.group_id = CS;\n  // v11.6: 4th attempt — required client fields as placeholders (Zendesk rejects client tickets without them)\n  const PH = [{ id: 25216274102548, value: 'POR IDENTIFICAR' }, { id: 44459532208276, value: 'POR IDENTIFICAR' }, { id: 33369429616276, value: 'colombia_client_country' }];\n  const p = { ...own, comment: { public: false, body: body + '\\n(Required client fields were filled with POR IDENTIFICAR / Colombia as placeholders so the ticket could be assigned. Please correct them once the client is identified.)' }, custom_fields: cf.concat([{ id: PAYFLOW, value: 'n/a' }], PH) };\n  if (grp || Number(tk.group_id) === CS) p.group_id = CS;\n  const add = [reroute ? 'nova_reasignado' : recat ? 'nova_categorized' : 'nova_routed'];\n  if (d.low_context) add.push('nova_low_context');\n  if (!tagOk && GENERIC.includes(tk.current_category || '')) add.push('nova_needs_category');\n  const addFallback = [...new Set(add.concat(['nova_needs_category']))];\n  return JSON.stringify({ skip: false, ticket_id: d.ticket_id, mode: tk.mode || 'new', channel: ch, owner: N[o], owner_slack_id: S[o] || '', category_name: d.category_name, category_tag: d.category_tag, category_saved: tagOk, request_type: rt, confidence: conf, low_context: !!d.low_context, urgent: !!d.urgent, urgent_reason: d.urgent_reason || '', same_issue_duplicate_of: d.same_issue_duplicate_of || '', assigned_by_duplicate: byDup, possible_product_issue: !!d.possible_product_issue, issue_signature: d.issue_signature || '', reason: d.reason || '', update: { ticket: t }, retry: { ticket: r }, fallback: { ticket: f }, placeholder: { ticket: p }, add_tags: add, add_tags_fallback: addFallback });\n})() }}",
         "options": {}
       },
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        59456,
-        18672
+        63504,
+        20256
       ],
-      "id": "5fc28490-8b77-4366-bae8-13d806d90b44",
+      "id": "b19012bb-d98c-403e-8717-8686166a580c",
       "name": "Build Zendesk Update"
     },
     {
@@ -767,13 +767,13 @@
         },
         "options": {}
       },
-      "id": "edb3219f-c727-4a33-a1e1-7cae4e9b73b4",
+      "id": "a6e7f8de-0909-40b7-876a-de6dc6fbf3ae",
       "name": "Has Decision?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        59664,
-        19184
+        63712,
+        20768
       ]
     },
     {
@@ -787,13 +787,13 @@
         "jsonBody": "={{ JSON.stringify($json.update) }}",
         "options": {}
       },
-      "id": "90422834-9a13-4267-8fc4-55a6644c04f1",
+      "id": "2ee52588-0e4f-4a1a-8324-0657cbca2637",
       "name": "Update Ticket",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        59904,
-        19104
+        63952,
+        20688
       ],
       "credentials": {
         "zendeskApi": {
@@ -814,13 +814,13 @@
         "jsonBody": "={{ JSON.stringify($('Build Zendesk Update').item.json.retry) }}",
         "options": {}
       },
-      "id": "2488dcd5-5595-4dc3-9854-8e598eadc91d",
+      "id": "bfb60c84-d545-425e-9490-1788ce31a8de",
       "name": "Retry Update (Payflow n/a)",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        59904,
-        19328
+        63952,
+        20912
       ],
       "credentials": {
         "zendeskApi": {
@@ -841,13 +841,13 @@
         "jsonBody": "={{ JSON.stringify($('Build Zendesk Update').item.json.fallback) }}",
         "options": {}
       },
-      "id": "5b8b1b3b-084f-4430-ae4f-daa8f6444683",
+      "id": "7b85dea4-e6f9-4595-9569-d7f2e8220273",
       "name": "Fallback: Assign Owner Only",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        60128,
-        19328
+        64176,
+        20912
       ],
       "credentials": {
         "zendeskApi": {
@@ -866,10 +866,10 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        60320,
-        18992
+        64368,
+        20576
       ],
-      "id": "05ba7170-9b28-410e-879b-bb3147823bd4",
+      "id": "25f2c4b0-f239-4cc3-9fd8-10fa947ade40",
       "name": "Mark Write: Updated"
     },
     {
@@ -881,10 +881,10 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        60352,
-        19216
+        64400,
+        20800
       ],
-      "id": "8338ac45-a322-4099-a5e3-c46896da698e",
+      "id": "2474c65c-3f6d-4275-9da5-6d4611697650",
       "name": "Mark Write: Fallback"
     },
     {
@@ -898,13 +898,13 @@
         "jsonBody": "={{ JSON.stringify({ tags: String($json.write_result || '').startsWith('fallback') ? $('Build Zendesk Update').item.json.add_tags_fallback : $('Build Zendesk Update').item.json.add_tags }) }}",
         "options": {}
       },
-      "id": "c3fbae2b-c688-4859-bbd8-d42b08f9f59f",
+      "id": "7259e83c-9a9d-4496-abd9-ffab7c5cf728",
       "name": "Add Routing Tags",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        60576,
-        19104
+        64624,
+        20688
       ],
       "credentials": {
         "zendeskApi": {
@@ -939,13 +939,13 @@
         },
         "options": {}
       },
-      "id": "98ebd0a4-cc9d-4677-836d-ea1f5c95c949",
+      "id": "0423b9ee-97fd-42ff-855b-4e801ea09429",
       "name": "Is Urgent?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        60112,
-        18592
+        64160,
+        20176
       ]
     },
     {
@@ -959,13 +959,13 @@
         "text": "=🚨 *Urgent ticket assigned to you* – <https://getontop.zendesk.com/agent/tickets/{{ $('Build Zendesk Update').item.json.ticket_id }}|#{{ $('Build Zendesk Update').item.json.ticket_id }}>\nCategory: {{ $('Build Zendesk Update').item.json.category_name }}\nWhy it's urgent: {{ $('Build Zendesk Update').item.json.urgent_reason }}\nNova left the full diagnosis, a suggested reply and how to reply on this channel as an internal note in the ticket. 🙌",
         "otherOptions": {}
       },
-      "id": "387337ba-68c4-44fd-b11a-4ef0f57e977a",
+      "id": "8eb5241e-f5f2-4993-bc12-4698d9a6a404",
       "name": "Send Urgent DM to Owner",
       "type": "n8n-nodes-base.slack",
       "typeVersion": 2.3,
       "position": [
-        60336,
-        18496
+        64384,
+        20080
       ],
       "webhookId": "6d14c540-4001-4deb-91fd-11a338985e73",
       "credentials": {
@@ -985,10 +985,10 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        60576,
-        18448
+        64624,
+        20032
       ],
-      "id": "68c4e4cb-b6dd-4136-a5a6-697285daee13",
+      "id": "6ee75d41-8277-482f-945a-c01845fb66a5",
       "name": "DM Result"
     },
     {
@@ -1000,10 +1000,10 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        60576,
-        18640
+        64624,
+        20224
       ],
-      "id": "0d162465-4afc-4ae6-834f-794f8edc0946",
+      "id": "3940b3c5-8a8d-45ed-a752-db841933be5f",
       "name": "No DM"
     },
     {
@@ -1017,13 +1017,13 @@
         "jsonBody": "={\"tags\":[\"nova_routing_failed\"]}",
         "options": {}
       },
-      "id": "35cbe717-85fb-4a7d-87fa-091ddbaa2665",
+      "id": "dfa3da0c-9b77-44fc-8722-2035ac5dab88",
       "name": "Tag Routing Failed",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        60352,
-        19488
+        64400,
+        21072
       ],
       "credentials": {
         "zendeskApi": {
@@ -1044,13 +1044,13 @@
         "text": "=⚠️ *Nova could not route* <https://getontop.zendesk.com/agent/tickets/{{ $('Build Zendesk Update').item.json.ticket_id }}|#{{ $('Build Zendesk Update').item.json.ticket_id }}> (update, Payflow retry and fallback all failed). Suggested owner: *{{ $('Build Zendesk Update').item.json.owner }}* · {{ $('Build Zendesk Update').item.json.category_name }}. Tagged `nova_routing_failed` so it isn't retried — please assign manually.",
         "otherOptions": {}
       },
-      "id": "5c847d7a-3a16-440f-a53d-06c41219eb15",
+      "id": "89249d27-a893-4a7a-a281-05a1c1a53387",
       "name": "Alert Routing Failed",
       "type": "n8n-nodes-base.slack",
       "typeVersion": 2.3,
       "position": [
-        60576,
-        19488
+        64624,
+        21072
       ],
       "webhookId": "c7b0f752-6cc1-4029-ba93-aff8830f4fcf",
       "credentials": {
@@ -1070,10 +1070,10 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        60800,
-        19488
+        64848,
+        21072
       ],
-      "id": "07421c1a-1831-4fca-9929-5e92f7cab8d6",
+      "id": "7d094f2e-152a-4652-b696-9586f9abe2d1",
       "name": "Mark Failed"
     },
     {
@@ -1085,10 +1085,10 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        60784,
-        18640
+        64832,
+        20224
       ],
-      "id": "f47dd792-245f-404d-85de-60600b69f146",
+      "id": "829d89c0-a235-4d15-b019-1b8bea9da8a0",
       "name": "Build Log Row"
     },
     {
@@ -1114,13 +1114,13 @@
         },
         "options": {}
       },
-      "id": "b72a3d4d-57a7-4027-b3c4-3a649b85f064",
+      "id": "804fecad-b0f9-46be-a782-e099c242e2db",
       "name": "Log Routing Decision",
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.5,
       "position": [
-        61008,
-        18640
+        65056,
+        20224
       ],
       "alwaysOutputData": true,
       "credentials": {
@@ -1133,13 +1133,13 @@
     },
     {
       "parameters": {},
-      "id": "04ca3a82-0610-479c-af04-bc2e119dd8e1",
+      "id": "424ead49-2652-4eb6-835d-b15cdec89e67",
       "name": "On Workflow Error",
       "type": "n8n-nodes-base.errorTrigger",
       "typeVersion": 1,
       "position": [
-        57600,
-        19504
+        61648,
+        21088
       ]
     },
     {
@@ -1153,13 +1153,13 @@
         "text": "=⚠️ Nova routing workflow failed: {{ $json.execution.error.message }}\nNode: {{ $json.execution.lastNodeExecuted }} · {{ $json.execution.url }}",
         "otherOptions": {}
       },
-      "id": "7f73dce3-2623-4e9a-80fb-34584f9c4fda",
+      "id": "06ec1ec5-ad33-49ab-9669-288f5fc4ed52",
       "name": "Send Error Alert to Slack",
       "type": "n8n-nodes-base.slack",
       "typeVersion": 2.3,
       "position": [
-        57824,
-        19504
+        61872,
+        21088
       ],
       "webhookId": "6e774ffa-9f9b-4ef3-b83f-1e4a9b34944e",
       "credentials": {
@@ -1186,10 +1186,10 @@
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.5,
       "position": [
-        58832,
-        18448
+        62880,
+        20032
       ],
-      "id": "2f03b845-3179-406a-9ad0-141216c7f32c",
+      "id": "b300360a-eb4d-4c1a-9fa8-1f0c90f44e26",
       "name": "Read Routing Log",
       "credentials": {
         "googleSheetsOAuth2Api": {
@@ -1203,13 +1203,13 @@
       "parameters": {
         "jsCode": "// Runs ONCE per execution, after all tickets of this run were routed and logged.\n// Stateless pattern detector (no workflow static data): reads the 'Ruteo Nova' log, counts tickets\n// flagged possible_product_issue per category in the last 3h, and alerts only when THIS run makes a\n// category cross the threshold (so the same cluster is not alerted every 5 minutes).\nconst WINDOW_MS = 3 * 60 * 60 * 1000, THRESHOLD = 3;\nconst SLACK = { Justin: 'U0CA6JRHVM3', Sudu: 'U03U61FQJKA', Jaime: 'U0CEQGZN7AB', Caro: 'U063KEHP2SD', Cristian: 'U0AU0TPJDM5', Brisa: 'U0AJMGBVCR5', Miguel: 'U06LW3ASH7D', Samuel: 'U099JCSKB3Q', Mike: 'U09NCCJJ2UT' };\nconst now = Date.now();\nconst RUN_MS = 6 * 60 * 1000; // rows logged in this run (v11.3: no $() lookup)\nconst toMs = ts => { const d = new Date(String(ts).replace(' ', 'T') + ':00-05:00'); return isNaN(d) ? 0 : d.getTime(); };\nconst rows = $input.all().map(i => i.json)\n  .filter(r => String(r.possible_product_issue).toLowerCase() === 'true' && now - toMs(r.timestamp) < WINDOW_MS);\nconst byCat = {};\nfor (const r of rows) {\n  const k = r.category_tag || r.category || 'unknown';\n  (byCat[k] = byCat[k] || new Map()).set(String(r.ticket_id), r);\n}\nconst out = [];\nfor (const [k, m] of Object.entries(byCat)) {\n  const all = [...m.values()];\n  const before = all.filter(r => now - toMs(r.timestamp) >= RUN_MS);\n  if (all.length >= THRESHOLD && before.length < THRESHOLD) {\n    const owners = [...new Set(all.map(r => r.owner).filter(Boolean))];\n    const last = all[all.length - 1];\n    out.push({ json: {\n      cluster_category: last.category || k,\n      cluster_count: all.length,\n      cluster_tickets: all.map(r => '<https://getontop.zendesk.com/agent/tickets/' + r.ticket_id + '|#' + r.ticket_id + '> (' + r.owner + ')').join(', '),\n      cluster_signatures: [...new Set(all.map(r => r.issue_signature).filter(Boolean))].join(' · '),\n      cluster_owner_mentions: owners.map(o => SLACK[o] ? '<@' + SLACK[o] + '>' : o).join(' '),\n      owner_slack_id: SLACK[last.owner] || '',\n    }});\n  }\n}\nreturn out;"
       },
-      "id": "43ab0f61-3f14-43bf-9370-682c5b4be6cb",
+      "id": "0b0bcd50-a309-44c6-93df-d0d0ca8d4d05",
       "name": "Detect Issue Pattern",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        59056,
-        18448
+        63104,
+        20032
       ]
     },
     {
@@ -1223,13 +1223,13 @@
         "text": "=🔎 *Possible product/tech issue* — {{ $json.cluster_count }} tickets in the last 3h with the same pattern\nCategory: {{ $json.cluster_category }}\nWhat workers describe: {{ $json.cluster_signatures }}\nTickets: {{ $json.cluster_tickets }}\nSuggested next step: ask these workers for a screenshot or screen recording (device, app version, approximate time of the error), then escalate in one thread to Tech / Product with the ticket list. Reply to workers that it was escalated — no ETAs.",
         "otherOptions": {}
       },
-      "id": "208d8ee5-5c2e-41ee-a341-2fc18701192e",
+      "id": "247e9100-3d56-40d3-9ea2-f9a13bd85504",
       "name": "DM Pattern Alert to Owner",
       "type": "n8n-nodes-base.slack",
       "typeVersion": 2.3,
       "position": [
-        59264,
-        18448
+        63312,
+        20032
       ],
       "webhookId": "6d14c540-4001-4deb-91fd-11a338985e73",
       "credentials": {
@@ -1251,13 +1251,13 @@
         "text": "=🔎 {{ $('Detect Issue Pattern').item.json.cluster_owner_mentions }} *Possible product/tech issue* — {{ $('Detect Issue Pattern').item.json.cluster_count }} tickets in the last 3h with the same pattern\nCategory: {{ $('Detect Issue Pattern').item.json.cluster_category }}\nWhat workers describe: {{ $('Detect Issue Pattern').item.json.cluster_signatures }}\nTickets: {{ $('Detect Issue Pattern').item.json.cluster_tickets }}\nSuggested next step: ask these workers for a screenshot or screen recording (device, app version, approximate time of the error), then escalate in one thread to Tech / Product with the ticket list. Reply to workers that it was escalated — no ETAs.",
         "otherOptions": {}
       },
-      "id": "c87c315a-ed6c-4eb7-9030-cb7e1e423ba7",
+      "id": "cb3dd7a1-9b50-497d-a608-a97618780dd0",
       "name": "Post Pattern Alert to Channel",
       "type": "n8n-nodes-base.slack",
       "typeVersion": 2.3,
       "position": [
-        59488,
-        18448
+        63536,
+        20032
       ],
       "webhookId": "c7b0f752-6cc1-4029-ba93-aff8830f4fcf",
       "credentials": {
@@ -1279,13 +1279,13 @@
         "jsonBody": "={{ JSON.stringify($('Build Zendesk Update').item.json.placeholder) }}",
         "options": {}
       },
-      "id": "8f077996-5da6-4507-9745-9c74a6ed45aa",
+      "id": "a87196ce-9a72-4fb0-b5e3-7c2020747e6a",
       "name": "Retry 3 (Client placeholders)",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        60352,
-        19488
+        64400,
+        21280
       ],
       "credentials": {
         "zendeskApi": {
@@ -1298,16 +1298,16 @@
     {
       "parameters": {
         "mode": "raw",
-        "options": {},
-        "jsonOutput": "={{ (() => { const tk = $('Loop Over Tickets').item.json || {}; const n = (tk.tags || []).filter(x => /^nova_try_/.test(x)).length + 1; return JSON.stringify({ ticket_id: tk.ticket_id, tags: n >= 3 ? ['nova_try_' + n, 'nova_routing_failed'] : ['nova_try_' + n] }); })() }}"
+        "jsonOutput": "={{ (() => { const tk = $('Loop Over Tickets').item.json || {}; const n = (tk.tags || []).filter(x => /^nova_try_/.test(x)).length + 1; return JSON.stringify({ ticket_id: tk.ticket_id, tags: n >= 3 ? ['nova_try_' + n, 'nova_routing_failed'] : ['nova_try_' + n] }); })() }}",
+        "options": {}
       },
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
-      "id": "112b5f1f-f12a-4006-9e12-3d81558d0b7a",
+      "id": "296d0384-dd42-4eef-8f00-6996d57cbf1b",
       "name": "Next Attempt Tag",
       "position": [
-        59664,
-        19392
+        63712,
+        20976
       ]
     },
     {
@@ -1321,13 +1321,13 @@
         "jsonBody": "={{ JSON.stringify({ tags: $json.tags }) }}",
         "options": {}
       },
-      "id": "ebedb196-8b28-4c6e-af90-e61f441876f0",
+      "id": "5595969d-a9fe-486d-a068-f6928808cd87",
       "name": "Add Attempt Tag",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        59904,
-        19552
+        63952,
+        21136
       ],
       "credentials": {
         "zendeskApi": {
@@ -1336,6 +1336,66 @@
         }
       },
       "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "url": "https://getontop.zendesk.com/api/v2/search.json",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "zendeskApi",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "query",
+              "value": "type:ticket status<solved custom_field_22865771347348:account__client_general_info -tags:nova_reasignado -tags:nova_categorized -tags:nova_followup_entrega"
+            },
+            {
+              "name": "sort_by",
+              "value": "created_at"
+            },
+            {
+              "name": "sort_order",
+              "value": "desc"
+            },
+            {
+              "name": "per_page",
+              "value": "25"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "f5ebfb15-1a6d-4c3e-9cb3-5d9cb12109ac",
+      "name": "Search Generic: Client General Info",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        62240,
+        21088
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 3000,
+      "credentials": {
+        "zendeskApi": {
+          "id": "VmW979VdDHSmLoVJ",
+          "name": "Mike Zendesk"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// v11.3: keep only the fields Filter & Prioritize needs (Zendesk tickets carry ~300 custom fields twice;\n// passing 4 full search results into one Code node stalled the task runner).\nconst CAT = 22865771347348;\nconst results = ($input.first()?.json?.results) || [];\n// (v11.3) tagged with its source so Filter can read everything from ONE Merge input, without $() lookups\nconst slim = results.map(t => ({\n  id: t.id, subject: t.subject, group_id: t.group_id, status: t.status, requester_id: t.requester_id,\n  created_at: t.created_at, assignee_id: t.assignee_id || null, description: String(t.description || '').slice(0, 200),\n  channel: t.via?.channel || null, tags: t.tags || [],\n  category: ((t.custom_fields || []).find(f => f.id === CAT) || {}).value || null,\n}));\nreturn [{ json: { source: 'gen_cgi', results: slim, count: slim.length } }];"
+      },
+      "id": "1dd1c990-5540-4825-93a2-78ac98623559",
+      "name": "Slim · Generic CGI",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        62352,
+        21184
+      ]
     }
   ],
   "connections": {
@@ -1498,6 +1558,11 @@
             "node": "Merge Queues",
             "type": "main",
             "index": 4
+          },
+          {
+            "node": "Search Generic: Client General Info",
+            "type": "main",
+            "index": 0
           }
         ]
       ]
@@ -1942,6 +2007,28 @@
             "node": "Loop Over Tickets",
             "type": "main",
             "index": 0
+          }
+        ]
+      ]
+    },
+    "Search Generic: Client General Info": {
+      "main": [
+        [
+          {
+            "node": "Slim · Generic CGI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Slim · Generic CGI": {
+      "main": [
+        [
+          {
+            "node": "Merge Queues",
+            "type": "main",
+            "index": 5
           }
         ]
       ]
