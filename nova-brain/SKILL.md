@@ -43,7 +43,7 @@ Lee primero `references/ids.md` (todos los IDs) y, según la tarea, `references/
 7. **Escalar a otra área**: asignar a la persona del área dentro del **grupo Worker Support**, en Open, con nota interna en el formato del equipo (ver workflows.md).
 8. **Plan de fin de semana**: lo que necesita otra área se mueve a Internally Raised con nota (sin side conversation); el lunes 6 a. m. COL se reabre en Open.
 9. **Aura (Ada)**: cambios por changeset → mostrar diff → Mike confirma → promote. Máx. 20 custom instructions activas.
-11. **Revisar la cola completa / duplicados / "qué se resuelve fácil"**: workflows.md §A2 (triage de la cola) y §K (consolidar duplicados con `scripts/dedup_consolidate.py`, dry-run por defecto).
+11. **Revisar la cola completa / duplicados / "qué se resuelve fácil"**: workflows.md §A2 (triage de la cola, `scripts/triage_queue.py`) y §K (consolidar duplicados con `scripts/dedup_consolidate.py`, dry-run por defecto).
 10. **Reportes a Slack**: DM a Mike `U09NCCJJ2UT`; canal del piloto `#temp-zendesk-tickets` (C0CHSEB9PD5).
 11. **Revisar pending/waiting y cerrar los resueltos** (workflow K): clasificar por el último mensaje real (Sunshine en mensajería, NO los comentarios) y por contenido, no por fecha; resolver con los campos que la categoría exige (Worker ID/Email de Onsight, Type of Request); nunca tocar assignee; mostrar el plan a Mike antes del cierre masivo y auditar después.
 

@@ -7,6 +7,7 @@
 Para "otras áreas": tickets de WS asignados a alguien que no es del equipo CX.
 
 ## A2. Triage de la cola completa ("qué se resuelve fácil y qué está duplicado")
+**Script:** `python3 -I scripts/triage_queue.py --out <ruta>/ws_triage.json` hace los pasos 1–4 (solo lectura) e imprime el reporte con IDs; luego agrupa y reporta. Los pasos de abajo explican qué hace y por qué.
 1. `zd.search_export("type:ticket group:WS status:new status:open")` (hoy ~310; la cola cambia mientras trabajas).
 2. **El contenido real de mensajería NO está en los comentarios de Zendesk** (solo "Conversation with NOMBRE" y notas del sistema): leer el último mensaje del usuario por Sunshine (`sunco.conversation_id` + `sunco.messages`, autor `user`). Hacerlo en Python con ThreadPoolExecutor(12), sin volcar transcripts al contexto.
 3. Clasificar por regex sobre ese texto (token/bloqueo, contraseña/OTP, transferencia pendiente/rechazada, tarjeta, KYC, PA, certificado, eliminar cuenta…). Ojo: ~40 % cae en "Otro/general" y muchos son "asesor / ¿cuándo me atienden?" tras un handoff de Ada: son de primer toque humano, no de área.
